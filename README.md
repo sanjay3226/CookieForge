@@ -85,8 +85,8 @@ With sub-second transaction finality, negligible gas fees (~$0.000005 per transa
 ### Installation
 ```bash
 # 1. Clone the repository
-git clone https://github.com/your-username/cookieforge.git
-cd cookieforge
+git clone https://github.com/sanjay3226/CookieForge.git
+cd CookieForge
 
 # 2. Install dependencies
 npm install
@@ -103,17 +103,9 @@ Visit `http://localhost:5173` in your browser.
 
 Deploying CookieForge to Vercel takes less than 2 minutes at $0 cost:
 
-1. Push this project to your GitHub account:
-   ```bash
-   git init
-   git add .
-   git commit -m "feat: CookieForge initial release for Cookie Chain Bounty"
-   git branch -M main
-   git remote add origin https://github.com/<your-github-username>/CookieForge.git
-   git push -u origin main
-   ```
+1. Repository is already live at: [https://github.com/sanjay3226/CookieForge](https://github.com/sanjay3226/CookieForge)
 2. Go to [vercel.com](https://vercel.com) and click **"Add New Project"**.
-3. Import your `CookieForge` repository.
+3. Import your `sanjay3226/CookieForge` repository.
 4. Framework Preset: **Vite**.
 5. Click **"Deploy"**. Your app will be live at `https://cookieforge.vercel.app`!
 
@@ -145,7 +137,7 @@ Below is the ready-to-post Twitter thread showcasing CookieForge for the Cookie 
 Bake on-chain fortunes, aggregate DEX swaps, resolve .cook domains & bridge over Hyperlane in sub-seconds.
 
 Try it live: [YOUR_VERCEL_URL]
-GitHub: [YOUR_GITHUB_URL]
+GitHub: https://github.com/sanjay3226/CookieForge
 
 🧵👇
 
