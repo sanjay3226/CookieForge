@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-primary: #090a0f;
+    --bg-secondary: #0f1218;
+    --bg-tertiary: #161922;
+    --border-subtle: #1e222d;
+    --border-hover: #2e3545;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --accent: #d97706;
+    --accent-glow: rgba(217, 119, 6, 0.15);
+  }
+
+  body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    margin: 0;
+    overflow-x: hidden;
+    letter-spacing: -0.01em;
+  }
+
+  /* Professional Monospace styling */
+  .font-mono {
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    letter-spacing: -0.02em;
+  }
+
+  /* Micro scrollbars */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #090a0f;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1e222d;
+    border-radius: 2px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #d97706;
+  }
+}
+
+/* Institutional Terminal Card */
+.terminal-card {
+  background: rgba(15, 18, 24, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.terminal-card:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.terminal-input {
+  background: rgba(9, 10, 15, 0.9);
+  border: 1px solid #1e222d;
+  color: #f1f5f9;
+  transition: all 0.15s ease;
+}
+
+.terminal-input:focus {
+  border-color: #d97706;
+  outline: none;
+  box-shadow: 0 0 0 1px rgba(217, 119, 6, 0.25);
+}
