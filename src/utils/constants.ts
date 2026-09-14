@@ -60,5 +60,8 @@ export const KNOWN_MINTS = {
   MAG: "HEcE248MYuJ49ukkTSLuNjv4Ha7J2juzwRK1o3ng93xh",
 } as const;
 
-// Community public goods tip jar / treasury
-export const COMMUNITY_COOKIE_JAR = "8nj4iBHZugPZ4T1NPM47zazSjhp68gHYkX6GbLdmT3AP";
+// CookieForge Creator & Builder Wallet
+export const CREATOR_WALLET = "Hgee1YpsE7vDnGsmEgdGEvti85UE5tKEwLrtmJeJVym2";
+
+// Community public goods tip jar / treasury (Defaults to Creator Builder Vault)
+export const COMMUNITY_COOKIE_JAR = "Hgee1YpsE7vDnGsmEgdGEvti85UE5tKEwLrtmJeJVym2";

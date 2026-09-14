@@ -69,6 +69,7 @@ With sub-second transaction finality, negligible gas fees (~$0.000005 per transa
 | **Solana COOK Mint** | `36ZrtQoab5MhhySaP1YSTwUahSk6GRVUTtZ6cuVfm9e1` (Token-2022) |
 | **Memo Program** | `MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr` |
 | **Custom Anchor Program** | `CookVau1t1111111111111111111111111111111111` (`cookie_vault`) |
+| **Creator / Deployer Wallet** | `Hgee1YpsE7vDnGsmEgdGEvti85UE5tKEwLrtmJeJVym2` |
 | **Name Service (.cook)** | `namesLPneVptA9Z5rqUDD9tMTWEJwofgaYwp8cawRkX` |
 | **Cookiebox DBC** | `DBCg4ugDEztk6MbqHEJvx5a5YGJTj45Jb5NvtQ48Rvsf` |
 | **Cookiebox DAMM v2** | `DAMMjDCEFTDkt7ywazZS8GoaLtjb3HaJo3pLbf64xrPY` |

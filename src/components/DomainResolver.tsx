@@ -66,9 +66,9 @@ export const DomainResolver: React.FC<DomainResolverProps> = ({ connection }) =>
       </form>
 
       {/* Suggested Quick Searches */}
-      <div className="mt-2.5 flex items-center gap-1.5 text-[10px] font-mono text-neutral-500">
+      <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-[10px] font-mono text-neutral-500">
         <span>Verified:</span>
-        {["chef", "baker", "degen", "satoshi"].map((name) => (
+        {["sanjay", "chef", "baker", "degen", "satoshi"].map((name) => (
           <button
             key={name}
             type="button"

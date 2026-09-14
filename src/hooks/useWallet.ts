@@ -1,7 +1,7 @@
 // Multi-Wallet Hook with First-Class Nightly Support & $0 Zero-Cost Simulation Mode
 import { useState, useEffect, useCallback } from "react";
 import { Connection, PublicKey, Transaction, Keypair } from "@solana/web3.js";
-import { COOKIE_CHAIN_CONFIG } from "../utils/constants";
+import { COOKIE_CHAIN_CONFIG, CREATOR_WALLET } from "../utils/constants";
 
 export type WalletType = "nightly" | "phantom" | "solflare" | "demo";
 
@@ -54,12 +54,11 @@ export function useWallet(connection: Connection) {
   const [demoKeypair, setDemoKeypair] = useState<Keypair | null>(() => Keypair.generate());
 
   const [state, setState] = useState<WalletState>(() => {
-    const kp = Keypair.generate();
     return {
       connected: true,
       connecting: false,
-      publicKey: kp.publicKey,
-      walletName: "Cookie Tester ($0 Sandbox)",
+      publicKey: new PublicKey(CREATOR_WALLET),
+      walletName: "CookieForge Creator ($0 Sandbox)",
       walletType: "demo",
       balanceCook: 420.69,
       isSimulationMode: true,
@@ -146,8 +145,8 @@ export function useWallet(connection: Connection) {
     setState({
       connected: true,
       connecting: false,
-      publicKey: kp.publicKey,
-      walletName: "Cookie Tester ($0 Sandbox)",
+      publicKey: new PublicKey(CREATOR_WALLET),
+      walletName: "CookieForge Creator ($0 Sandbox)",
       walletType: "demo",
       balanceCook: 420.69, // Demo balance for free testing
       isSimulationMode: true,
@@ -196,7 +195,7 @@ export function useWallet(connection: Connection) {
           const { blockhash } = await connection.getLatestBlockhash("confirmed");
           transaction.recentBlockhash = blockhash;
           transaction.feePayer = state.publicKey;
-          if (demoKeypair) {
+          if (demoKeypair && demoKeypair.publicKey.equals(state.publicKey)) {
             transaction.sign(demoKeypair);
           }
           // Attempt RPC simulation check
