@@ -1,9 +1,9 @@
-// Multi-Wallet Hook with First-Class Nightly Support & $0 Zero-Cost Simulation Mode
+// Multi-Wallet Hook with Native Nightly, Phantom & Solflare Support on Cookie Chain SVM
 import { useState, useEffect, useCallback } from "react";
-import { Connection, PublicKey, Transaction, Keypair } from "@solana/web3.js";
-import { COOKIE_CHAIN_CONFIG, CREATOR_WALLET } from "../utils/constants";
+import { Connection, PublicKey, Transaction } from "@solana/web3.js";
+import { COOKIE_CHAIN_CONFIG } from "../utils/constants";
 
-export type WalletType = "nightly" | "phantom" | "solflare" | "demo";
+export type WalletType = "nightly" | "phantom" | "solflare";
 
 export interface WalletState {
   connected: boolean;
@@ -12,7 +12,6 @@ export interface WalletState {
   walletName: string | null;
   walletType: WalletType | null;
   balanceCook: number;
-  isSimulationMode: boolean;
 }
 
 declare global {
@@ -35,6 +34,7 @@ declare global {
         signAndSendTransaction: (tx: Transaction) => Promise<{ signature: string }>;
         signTransaction: (tx: Transaction) => Promise<Transaction>;
         isPhantom?: boolean;
+        isConnected?: boolean;
       };
     };
     solflare?: {
@@ -50,30 +50,47 @@ declare global {
 }
 
 export function useWallet(connection: Connection) {
-  // Ephemeral demo keypair for $0 zero-cost interactive testing
-  const [demoKeypair, setDemoKeypair] = useState<Keypair | null>(() => Keypair.generate());
-
-  const [state, setState] = useState<WalletState>(() => {
-    return {
-      connected: true,
-      connecting: false,
-      publicKey: new PublicKey(CREATOR_WALLET),
-      walletName: "CookieForge Creator ($0 Sandbox)",
-      walletType: "demo",
-      balanceCook: 420.69,
-      isSimulationMode: true,
-    };
+  const [state, setState] = useState<WalletState>({
+    connected: false,
+    connecting: false,
+    publicKey: null,
+    walletName: null,
+    walletType: null,
+    balanceCook: 0,
   });
 
-  // Refresh balance
-  const refreshBalance = useCallback(async (pubkey: PublicKey) => {
-    try {
-      const lamports = await connection.getBalance(pubkey);
-      setState((s) => ({ ...s, balanceCook: lamports / 1_000_000_000 }));
-    } catch {
-      // ignore
+  // Refresh live balance from Cookie Chain RPC
+  const refreshBalance = useCallback(
+    async (pubkey: PublicKey) => {
+      try {
+        const lamports = await connection.getBalance(pubkey, "confirmed");
+        setState((s) => ({ ...s, balanceCook: lamports / 1_000_000_000 }));
+      } catch {
+        // RPC fallback
+      }
+    },
+    [connection]
+  );
+
+  // Auto-detect previously authorized Nightly connection
+  useEffect(() => {
+    if (window.nightly?.solana?.isConnected && window.nightly.solana.publicKey) {
+      try {
+        const pk = new PublicKey(window.nightly.solana.publicKey.toBase58());
+        setState({
+          connected: true,
+          connecting: false,
+          publicKey: pk,
+          walletName: "Nightly Wallet",
+          walletType: "nightly",
+          balanceCook: 0,
+        });
+        refreshBalance(pk);
+      } catch {
+        // ignore
+      }
     }
-  }, [connection]);
+  }, [refreshBalance]);
 
   // Connect to Nightly Wallet
   const connectNightly = useCallback(async () => {
@@ -82,7 +99,9 @@ export function useWallet(connection: Connection) {
       const nightly = window.nightly?.solana;
       if (!nightly) {
         window.open("https://nightly.app/", "_blank");
-        throw new Error("Nightly wallet extension not detected! Please install Nightly from nightly.app.");
+        throw new Error(
+          "Nightly Wallet extension not detected! Please install Nightly from nightly.app."
+        );
       }
       const res = await nightly.connect();
       const pk = new PublicKey(res.publicKey.toBase58());
@@ -93,7 +112,6 @@ export function useWallet(connection: Connection) {
         walletName: "Nightly Wallet",
         walletType: "nightly",
         balanceCook: 0,
-        isSimulationMode: false,
       });
       refreshBalance(pk);
     } catch (err: any) {
@@ -103,62 +121,44 @@ export function useWallet(connection: Connection) {
   }, [refreshBalance]);
 
   // Connect to Phantom or Solflare
-  const connectStandard = useCallback(async (type: "phantom" | "solflare") => {
-    setState((s) => ({ ...s, connecting: true }));
-    try {
-      let provider: any = null;
-      let name = "";
-      if (type === "phantom") {
-        provider = window.phantom?.solana || window.solana;
-        name = "Phantom";
-      } else {
-        provider = window.solflare;
-        name = "Solflare";
+  const connectStandard = useCallback(
+    async (type: "phantom" | "solflare") => {
+      setState((s) => ({ ...s, connecting: true }));
+      try {
+        let provider: any = null;
+        let name = "";
+        if (type === "phantom") {
+          provider = window.phantom?.solana || window.solana;
+          name = "Phantom";
+        } else {
+          provider = window.solflare;
+          name = "Solflare";
+        }
+
+        if (!provider) {
+          throw new Error(
+            `${name} wallet not detected. Please install the extension or use Nightly.`
+          );
+        }
+
+        await provider.connect();
+        const pk = new PublicKey(provider.publicKey.toBase58());
+        setState({
+          connected: true,
+          connecting: false,
+          publicKey: pk,
+          walletName: name,
+          walletType: type,
+          balanceCook: 0,
+        });
+        refreshBalance(pk);
+      } catch (err) {
+        setState((s) => ({ ...s, connecting: false }));
+        throw err;
       }
-
-      if (!provider) {
-        throw new Error(`${name} wallet not detected. Please install extension or use Nightly.`);
-      }
-
-      await provider.connect();
-      const pk = new PublicKey(provider.publicKey.toBase58());
-      setState({
-        connected: true,
-        connecting: false,
-        publicKey: pk,
-        walletName: name,
-        walletType: type,
-        balanceCook: 0,
-        isSimulationMode: false,
-      });
-      refreshBalance(pk);
-    } catch (err) {
-      setState((s) => ({ ...s, connecting: false }));
-      throw err;
-    }
-  }, [refreshBalance]);
-
-  // Connect Zero-Cost Demo/Simulation Mode
-  const connectDemoMode = useCallback(() => {
-    const kp = Keypair.generate();
-    setDemoKeypair(kp);
-    setState({
-      connected: true,
-      connecting: false,
-      publicKey: new PublicKey(CREATOR_WALLET),
-      walletName: "CookieForge Creator ($0 Sandbox)",
-      walletType: "demo",
-      balanceCook: 420.69, // Demo balance for free testing
-      isSimulationMode: true,
-    });
-  }, []);
-
-  const resetDemoBalance = useCallback(() => {
-    setState((s) => ({
-      ...s,
-      balanceCook: 420.69,
-    }));
-  }, []);
+    },
+    [refreshBalance]
+  );
 
   const disconnect = useCallback(async () => {
     try {
@@ -179,55 +179,19 @@ export function useWallet(connection: Connection) {
       walletName: null,
       walletType: null,
       balanceCook: 0,
-      isSimulationMode: false,
     });
-    setDemoKeypair(null);
   }, [state.walletType]);
 
-  // Sign and send transaction wrapper
+  // Real On-Chain Transaction Dispatcher to Cookie Chain RPC
   const sendTransaction = useCallback(
-    async (transaction: Transaction): Promise<{ signature: string; isSimulated?: boolean }> => {
-      if (!state.publicKey) throw new Error("Wallet not connected");
-
-      // In $0 Simulation Mode:
-      if (state.isSimulationMode || state.walletType === "demo") {
-        try {
-          const { blockhash } = await connection.getLatestBlockhash("confirmed");
-          transaction.recentBlockhash = blockhash;
-          transaction.feePayer = state.publicKey;
-          if (demoKeypair && demoKeypair.publicKey.equals(state.publicKey)) {
-            transaction.sign(demoKeypair);
-          }
-          // Attempt RPC simulation check
-          const sim = await connection.simulateTransaction(transaction);
-          // AccountNotFound is expected on mainnet RPC for freshly generated 0-balance demo keys
-          if (sim.value.err && sim.value.err !== "AccountNotFound") {
-            console.info("RPC Simulation trace:", sim.value.logs);
-          }
-        } catch {
-          // Graceful fallback for offline / network spikes
-        }
-
-        // Sub-second simulated finality delay
-        await new Promise((r) => setTimeout(r, 600));
-
-        // Deduct a tiny demo gas fee or tip from demo balance
-        setState((s) => ({
-          ...s,
-          balanceCook: Math.max(0, s.balanceCook - 0.0001),
-        }));
-
-        // Generate a base58 simulated signature
-        const chars = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
-        const pseudoSig = Array.from({ length: 88 }, () =>
-          chars[Math.floor(Math.random() * chars.length)]
-        ).join("");
-
-        return { signature: pseudoSig, isSimulated: true };
+    async (transaction: Transaction): Promise<{ signature: string }> => {
+      if (!state.publicKey) {
+        throw new Error("Wallet not connected. Please connect your Nightly or SVM wallet.");
       }
 
-      // Real Wallet Transaction
-      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("confirmed");
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash(
+        "confirmed"
+      );
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = state.publicKey;
 
@@ -245,24 +209,22 @@ export function useWallet(connection: Connection) {
         throw new Error("No compatible wallet signer found.");
       }
 
-      // Confirm with sub-second finality
+      // Confirm transaction on Cookie Chain SVM
       await connection.confirmTransaction(
         { blockhash, lastValidBlockHeight, signature },
         "confirmed"
       );
 
       refreshBalance(state.publicKey);
-      return { signature, isSimulated: false };
+      return { signature };
     },
-    [state, connection, demoKeypair, refreshBalance]
+    [state, connection, refreshBalance]
   );
 
   return {
     ...state,
     connectNightly,
     connectStandard,
-    connectDemoMode,
-    resetDemoBalance,
     disconnect,
     sendTransaction,
     refreshBalance: () => state.publicKey && refreshBalance(state.publicKey),

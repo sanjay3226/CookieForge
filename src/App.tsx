@@ -8,7 +8,8 @@ import {
   Zap,
   Activity,
   ExternalLink,
-  Trophy
+  ShieldCheck,
+  Cpu
 } from "lucide-react";
 import { useCookieChain } from "./hooks/useCookieChain";
 import { useWallet } from "./hooks/useWallet";
@@ -20,8 +21,8 @@ import { DomainResolver } from "./components/DomainResolver";
 import { BridgeCompanion } from "./components/BridgeCompanion";
 import { MarketRadar } from "./components/MarketRadar";
 import { NetworkModal } from "./components/NetworkModal";
-import { JudgeGuideModal } from "./components/JudgeGuideModal";
-import { COOKIE_CHAIN_CONFIG } from "./utils/constants";
+import { COOKIE_CHAIN_CONFIG, CREATOR_WALLET } from "./utils/constants";
+import { shortenAddress } from "./utils/format";
 
 export function App() {
   const { connection, chainState } = useCookieChain();
@@ -29,112 +30,79 @@ export function App() {
 
   const [activeTab, setActiveTab] = useState<"inscribe" | "swap" | "domains" | "bridge" | "radar">("inscribe");
   const [isNetworkModalOpen, setIsNetworkModalOpen] = useState(false);
-  const [isJudgeModalOpen, setIsJudgeModalOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#090a0f] text-neutral-100 font-sans selection:bg-amber-500 selection:text-black">
+    <div className="min-h-screen bg-[#07090e] text-neutral-100 font-sans selection:bg-amber-500 selection:text-black">
       {/* Institutional Top Bar */}
       <Header
         chainState={chainState}
         wallet={wallet}
         onOpenNetworkGuide={() => setIsNetworkModalOpen(true)}
-        onOpenJudgeGuide={() => setIsJudgeModalOpen(true)}
       />
 
       {/* Main Content Area */}
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-        {/* Minimal Hero Stats Bar */}
-        <div className="mb-6 rounded-2xl border border-white/[0.07] bg-[#0f1218]/60 p-5 sm:p-6 backdrop-blur-xl shadow-xl">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        {/* Terminal Overview Hero */}
+        <div className="mb-6 rounded-2xl border border-white/[0.08] bg-gradient-to-br from-[#0e121a]/80 via-[#0a0d14]/70 to-[#07090e]/80 p-6 backdrop-blur-2xl shadow-2xl relative overflow-hidden">
+          <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-amber-500/5 blur-3xl pointer-events-none" />
+          
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
             <div>
-              <div className="flex items-center gap-2 mb-2 font-mono text-[11px] text-amber-400 font-medium">
-                <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+              <div className="flex items-center gap-2 mb-2 font-mono text-xs text-amber-400 font-medium">
+                <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse"></span>
                 <span>Cookie Chain SVM Network</span>
+                <span className="text-neutral-600">•</span>
+                <span className="text-neutral-400">Anchor Runtime v0.30</span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
-                Sub-Second SVM Terminal & Infrastructure Hub
+                Institutional SVM Terminal & Smart Contract Engine
               </h1>
-              <p className="mt-1.5 max-w-2xl text-xs sm:text-sm text-neutral-400 leading-relaxed">
-                Full-stack cApp demonstrating sub-second settlement, genesis Memo inscriptions, Cookiebox AMM liquidity aggregation, .cook identity resolution, and Hyperlane warp routing.
+              <p className="mt-2 max-w-2xl text-xs sm:text-sm text-neutral-400 leading-relaxed">
+                Production-grade cApp featuring custom on-chain Anchor state (<code className="text-neutral-300 font-mono">cookie_vault</code>), Cookiebox DEX aggregation, CookOven domain resolution, and Hyperlane cross-chain warp routing.
               </p>
             </div>
 
             {/* Micro Benchmark Indicators */}
-            <div className="flex items-center gap-3 font-mono">
-              <div className="rounded-xl border border-white/[0.06] bg-black/40 px-3.5 py-2 text-center">
-                <span className="text-[10px] text-neutral-500 uppercase block">Finality</span>
-                <span className="text-sm font-bold text-amber-300 flex items-center justify-center gap-1">
+            <div className="flex items-center gap-3 font-mono self-start lg:self-auto">
+              <div className="rounded-xl border border-white/[0.08] bg-black/50 px-4 py-2.5 text-center shadow-inner">
+                <span className="text-[10px] text-neutral-500 uppercase tracking-wider block">Finality</span>
+                <span className="text-sm font-bold text-amber-300 flex items-center justify-center gap-1 mt-0.5">
                   <Zap className="h-3 w-3" />
                   &lt;800ms
                 </span>
               </div>
-              <div className="rounded-xl border border-white/[0.06] bg-black/40 px-3.5 py-2 text-center">
-                <span className="text-[10px] text-neutral-500 uppercase block">Gas Fee</span>
-                <span className="text-sm font-bold text-emerald-400">0.000005 COOK</span>
+              <div className="rounded-xl border border-white/[0.08] bg-black/50 px-4 py-2.5 text-center shadow-inner">
+                <span className="text-[10px] text-neutral-500 uppercase tracking-wider block">Avg Gas</span>
+                <span className="text-sm font-bold text-emerald-400 mt-0.5 block">0.000005 COOK</span>
               </div>
-              <div className="rounded-xl border border-white/[0.06] bg-black/40 px-3.5 py-2 text-center">
-                <span className="text-[10px] text-neutral-500 uppercase block">Deploy Cost</span>
-                <span className="text-sm font-bold text-neutral-200">~$0.05</span>
+              <div className="rounded-xl border border-white/[0.08] bg-black/50 px-4 py-2.5 text-center shadow-inner">
+                <span className="text-[10px] text-neutral-500 uppercase tracking-wider block">Deploy Cost</span>
+                <span className="text-sm font-bold text-neutral-200 mt-0.5 block">~$0.05</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Zero-Gas Sandbox Mode Callout for Judges & Reviewers */}
-        {wallet.isSimulationMode && (
-          <div className="mb-6 rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent p-4 sm:p-5 backdrop-blur-xl shadow-lg shadow-amber-500/5 animate-in fade-in">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex items-start sm:items-center gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-amber-500/40 bg-amber-500/20 text-amber-400">
-                  <Zap className="h-5 w-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs font-bold uppercase tracking-wider text-amber-300">
-                      Zero-Gas Interactive Sandbox Active
-                    </span>
-                    <span className="rounded bg-amber-500/20 px-2 py-0.5 text-[10px] font-mono font-bold text-amber-300">
-                      {wallet.balanceCook.toFixed(2)} Demo COOK Loaded
-                    </span>
-                  </div>
-                  <p className="text-xs text-neutral-300 mt-0.5 max-w-2xl leading-relaxed">
-                    Judges & reviewers can test all SVM interactions immediately with $0 and 0 wallet setup. Click <strong>Inscribe in Sandbox Mode</strong> or <strong>Simulate Swap</strong> below to test sub-second finality.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
-                <button
-                  onClick={() => setIsJudgeModalOpen(true)}
-                  className="w-full sm:w-auto rounded-xl border border-amber-500/40 bg-amber-500/15 hover:bg-amber-500/25 px-3.5 py-2 text-xs font-mono font-bold text-amber-300 transition text-center shadow-sm active:scale-95"
-                >
-                  Reviewer Fast-Track
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Precision Segmented Navigation */}
+        {/* Navigation Tabs */}
         <div className="mb-6 flex items-center justify-start overflow-x-auto pb-1 scrollbar-none">
-          <div className="inline-flex gap-1 rounded-xl border border-white/[0.08] bg-[#0f1218] p-1 shadow-sm">
+          <div className="inline-flex gap-1.5 rounded-2xl border border-white/[0.08] bg-[#0c0f16] p-1.5 shadow-lg">
             <button
               onClick={() => setActiveTab("inscribe")}
-              className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-mono font-medium transition ${
+              className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-mono font-medium transition ${
                 activeTab === "inscribe"
-                  ? "bg-amber-500 text-neutral-950 font-bold shadow"
+                  ? "bg-amber-500 text-neutral-950 font-bold shadow-md shadow-amber-500/10"
                   : "text-neutral-400 hover:text-white"
               }`}
             >
-              <Terminal className="h-3.5 w-3.5" />
-              <span>Inscription Engine</span>
+              <Cpu className="h-3.5 w-3.5" />
+              <span>Smart Contract & Inscriptions</span>
             </button>
 
             <button
               onClick={() => setActiveTab("swap")}
-              className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-mono font-medium transition ${
+              className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-mono font-medium transition ${
                 activeTab === "swap"
-                  ? "bg-amber-500 text-neutral-950 font-bold shadow"
+                  ? "bg-amber-500 text-neutral-950 font-bold shadow-md shadow-amber-500/10"
                   : "text-neutral-400 hover:text-white"
               }`}
             >
@@ -144,9 +112,9 @@ export function App() {
 
             <button
               onClick={() => setActiveTab("domains")}
-              className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-mono font-medium transition ${
+              className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-mono font-medium transition ${
                 activeTab === "domains"
-                  ? "bg-amber-500 text-neutral-950 font-bold shadow"
+                  ? "bg-amber-500 text-neutral-950 font-bold shadow-md shadow-amber-500/10"
                   : "text-neutral-400 hover:text-white"
               }`}
             >
@@ -156,21 +124,21 @@ export function App() {
 
             <button
               onClick={() => setActiveTab("bridge")}
-              className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-mono font-medium transition ${
+              className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-mono font-medium transition ${
                 activeTab === "bridge"
-                  ? "bg-amber-500 text-neutral-950 font-bold shadow"
+                  ? "bg-amber-500 text-neutral-950 font-bold shadow-md shadow-amber-500/10"
                   : "text-neutral-400 hover:text-white"
               }`}
             >
               <Layers className="h-3.5 w-3.5" />
-              <span>Hyperlane Bridge</span>
+              <span>Hyperlane Warp Route</span>
             </button>
 
             <button
               onClick={() => setActiveTab("radar")}
-              className={`flex items-center gap-2 rounded-lg px-3.5 py-2 text-xs font-mono font-medium transition ${
+              className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-mono font-medium transition ${
                 activeTab === "radar"
-                  ? "bg-amber-500 text-neutral-950 font-bold shadow"
+                  ? "bg-amber-500 text-neutral-950 font-bold shadow-md shadow-amber-500/10"
                   : "text-neutral-400 hover:text-white"
               }`}
             >
@@ -223,23 +191,26 @@ export function App() {
         onClose={() => setIsNetworkModalOpen(false)}
       />
 
-      {/* Judge & Reviewer Fast-Track Guide Modal */}
-      <JudgeGuideModal
-        isOpen={isJudgeModalOpen}
-        onClose={() => setIsJudgeModalOpen(false)}
-        onActivateDemo={wallet.connectDemoMode}
-      />
-
       {/* Institutional Footer */}
-      <footer className="mt-16 border-t border-white/[0.06] bg-[#090a0f] py-6 px-4 text-xs font-mono text-neutral-500">
-        <div className="mx-auto max-w-7xl flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-neutral-300">CookieForge</span>
-            <span className="text-neutral-600">•</span>
-            <span>SVM cApp for Cookie Chain</span>
+      <footer className="mt-20 border-t border-white/[0.08] bg-[#07090e] py-8 px-4 text-xs font-mono text-neutral-500">
+        <div className="mx-auto max-w-7xl flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
+            <span className="font-bold text-neutral-200">CookieForge SVM Terminal</span>
+            <span className="text-neutral-700 hidden sm:inline">•</span>
+            <span className="text-neutral-400">
+              Built by{" "}
+              <a 
+                href={`${COOKIE_CHAIN_CONFIG.explorerUrl}/address/${CREATOR_WALLET}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-amber-400 hover:underline font-bold"
+              >
+                Sanjay ({shortenAddress(CREATOR_WALLET, 4)})
+              </a>
+            </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-4 text-[11px] text-neutral-400">
+          <div className="flex flex-wrap items-center justify-center gap-4 text-[11px] text-neutral-400">
             <a
               href={COOKIE_CHAIN_CONFIG.docsUrl}
               target="_blank"

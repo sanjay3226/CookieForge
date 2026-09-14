@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { Coins, ExternalLink, Send, CheckCircle2, ShieldCheck, ArrowUpRight, FlaskConical } from "lucide-react";
+import { Coins, ExternalLink, Send, CheckCircle2, ShieldCheck, ArrowUpRight, Wallet } from "lucide-react";
 import { Transaction, SystemProgram, PublicKey } from "@solana/web3.js";
 import { createMemoInstruction } from "../utils/memo";
-import { COMMUNITY_COOKIE_JAR, COOKIE_CHAIN_CONFIG } from "../utils/constants";
+import { CREATOR_WALLET, COOKIE_CHAIN_CONFIG } from "../utils/constants";
 import { shortenAddress } from "../utils/format";
 import { playSuccessChime } from "../utils/audio";
 
@@ -11,14 +11,12 @@ interface CommunityTreasuryProps {
     connected: boolean;
     publicKey: any;
     balanceCook: number;
-    isSimulationMode: boolean;
-    sendTransaction: (tx: Transaction) => Promise<{ signature: string; isSimulated?: boolean }>;
-    connectDemoMode: () => void;
+    sendTransaction: (tx: Transaction) => Promise<{ signature: string }>;
+    connectNightly: () => Promise<void>;
   };
 }
 
 interface TreasuryReceipt {
-  isSimulated: boolean;
   signature: string;
   amount: string;
 }
@@ -26,11 +24,12 @@ interface TreasuryReceipt {
 export const CookieJar: React.FC<CommunityTreasuryProps> = ({ wallet }) => {
   const [tipAmount, setTipAmount] = useState("0.1");
   const [isSending, setIsSending] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [receipt, setReceipt] = useState<TreasuryReceipt | null>(null);
 
   const handleSendTip = async () => {
     if (!wallet.connected) {
-      wallet.connectDemoMode();
+      wallet.connectNightly().catch((e) => alert(e.message));
       return;
     }
 
@@ -39,15 +38,16 @@ export const CookieJar: React.FC<CommunityTreasuryProps> = ({ wallet }) => {
 
     setIsSending(true);
     setReceipt(null);
+    setErrorMessage(null);
 
     try {
       const lamports = Math.floor(num * 1_000_000_000);
-      const recipient = new PublicKey(COMMUNITY_COOKIE_JAR);
+      const recipient = new PublicKey(CREATOR_WALLET);
 
       const tx = new Transaction();
       tx.add(
         createMemoInstruction(
-          `[PublicGoods] Grant: ${num} COOK | CookieForge`,
+          `[BuilderGrant] Tip: ${num} COOK to Sanjay | CookieForge`,
           wallet.publicKey
         )
       );
@@ -63,37 +63,49 @@ export const CookieJar: React.FC<CommunityTreasuryProps> = ({ wallet }) => {
       playSuccessChime();
 
       setReceipt({
-        isSimulated: res.isSimulated ?? wallet.isSimulationMode,
         signature: res.signature,
         amount: tipAmount,
       });
     } catch (err: any) {
-      console.error(err);
+      console.error("Tip transfer error:", err);
+      setErrorMessage(err?.message || "Failed to send tip. Ensure sufficient COOK balance.");
     } finally {
       setIsSending(false);
     }
   };
 
   return (
-    <div className="rounded-2xl border border-white/[0.08] bg-[#0f1218]/90 p-5 backdrop-blur-xl shadow-xl">
-      <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+    <div className="rounded-2xl border border-white/[0.08] bg-[#0c0f16]/95 p-6 backdrop-blur-xl shadow-2xl">
+      <div className="flex items-center justify-between pb-4 border-b border-white/[0.06]">
         <div>
-          <h3 className="text-xs font-bold uppercase tracking-wider font-mono text-white">
-            Ecosystem Public Goods Treasury
-          </h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-bold uppercase tracking-wider font-mono text-white">
+              Builder & Creator Treasury
+            </h3>
+            <span className="rounded bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 text-[10px] font-mono text-amber-300 font-bold">
+              Verified
+            </span>
+          </div>
           <p className="text-[11px] text-neutral-400 font-mono mt-0.5">
-            Vault: {shortenAddress(COMMUNITY_COOKIE_JAR, 5)}
+            Vault: <span className="text-neutral-200 font-bold">{shortenAddress(CREATOR_WALLET, 6)}</span>
           </p>
         </div>
-        <span className="rounded bg-white/[0.04] border border-white/[0.06] px-2 py-0.5 text-[10px] font-mono text-neutral-400">
-          Non-Custodial
-        </span>
+
+        <a
+          href={`${COOKIE_CHAIN_CONFIG.explorerUrl}/address/${CREATOR_WALLET}`}
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center gap-1 rounded-lg border border-white/[0.08] bg-black/40 px-2.5 py-1 text-[11px] font-mono text-neutral-400 hover:text-amber-400 hover:border-amber-500/30 transition"
+        >
+          <span>Explorer</span>
+          <ExternalLink className="h-3 w-3" />
+        </a>
       </div>
 
-      <div className="mt-4 space-y-3">
+      <div className="mt-4 space-y-3.5">
         <div className="flex justify-between items-center text-xs">
-          <span className="text-neutral-400">Select Allocation:</span>
-          <span className="font-mono text-neutral-500 text-[11px]">Direct Transfer</span>
+          <span className="text-neutral-400 font-mono">Select Tip Amount:</span>
+          <span className="font-mono text-neutral-500 text-[11px]">Direct On-Chain Transfer</span>
         </div>
 
         <div className="grid grid-cols-4 gap-2">
@@ -104,11 +116,12 @@ export const CookieJar: React.FC<CommunityTreasuryProps> = ({ wallet }) => {
               onClick={() => {
                 setTipAmount(amt);
                 setReceipt(null);
+                setErrorMessage(null);
               }}
-              className={`rounded-lg py-1.5 font-mono text-xs transition border ${
+              className={`rounded-xl py-2 font-mono text-xs transition border ${
                 tipAmount === amt
-                  ? "border-amber-500/40 bg-amber-500/10 text-amber-300 font-bold"
-                  : "border-white/[0.06] bg-black/30 text-neutral-400 hover:text-white"
+                  ? "border-amber-500/50 bg-amber-500/15 text-amber-300 font-bold shadow-md"
+                  : "border-white/[0.06] bg-black/40 text-neutral-400 hover:text-white"
               }`}
             >
               {amt} COOK
@@ -124,61 +137,55 @@ export const CookieJar: React.FC<CommunityTreasuryProps> = ({ wallet }) => {
             onChange={(e) => {
               setTipAmount(e.target.value);
               setReceipt(null);
+              setErrorMessage(null);
             }}
             placeholder="Custom amount"
-            className="w-full rounded-xl border border-white/[0.08] bg-black/40 px-3.5 py-2 text-xs text-white placeholder-neutral-500 focus:border-amber-500/50 focus:outline-none font-mono"
+            className="w-full rounded-xl border border-white/[0.08] bg-black/50 px-4 py-2.5 text-xs text-white placeholder-neutral-500 focus:border-amber-500/50 focus:outline-none font-mono shadow-inner"
           />
-          <span className="absolute right-3 top-2 text-xs font-mono text-neutral-500">COOK</span>
+          <span className="absolute right-3.5 top-2.5 text-xs font-mono text-amber-400 font-bold">COOK</span>
         </div>
+
+        {errorMessage && (
+          <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs font-mono text-red-300">
+            {errorMessage}
+          </div>
+        )}
 
         <button
           onClick={handleSendTip}
           disabled={isSending}
-          className="w-full flex items-center justify-center gap-2 rounded-xl bg-white/[0.07] hover:bg-white/[0.12] py-2.5 text-xs font-semibold text-white transition disabled:opacity-50"
+          className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 active:scale-[0.99] py-3 text-xs font-bold text-neutral-950 transition disabled:opacity-50 shadow-lg shadow-amber-500/10"
         >
           {isSending ? (
-            <span>Broadcasting Transaction...</span>
+            <span>Signing & Transferring...</span>
+          ) : !wallet.connected ? (
+            <>
+              <Wallet className="h-4 w-4" />
+              <span>Connect Nightly to Tip Builder</span>
+            </>
           ) : (
             <>
-              <Coins className="h-3.5 w-3.5 text-amber-400" />
-              <span>
-                {wallet.isSimulationMode
-                  ? `Simulate ${tipAmount} COOK Grant (Sandbox)`
-                  : `Contribute ${tipAmount} COOK to Treasury`}
-              </span>
+              <Coins className="h-4 w-4" />
+              <span>Send {tipAmount} COOK to Creator Vault</span>
             </>
           )}
         </button>
 
         {receipt && (
-          <div className="animate-in fade-in">
-            {receipt.isSimulated ? (
-              <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 text-xs font-mono space-y-1">
-                <div className="flex items-center gap-1.5 text-amber-400 font-bold text-[11px]">
-                  <FlaskConical className="h-3.5 w-3.5" />
-                  <span>Sandbox Grant Dispatched</span>
-                </div>
-                <p className="text-neutral-300 font-sans text-[11px]">
-                  Simulated transfer of {receipt.amount} COOK to Community Vault. Zero real funds moved.
-                </p>
-              </div>
-            ) : (
-              <div className="flex items-center justify-between rounded-xl border border-emerald-500/30 bg-emerald-500/[0.05] p-3 text-xs text-emerald-400">
-                <div className="flex items-center gap-1.5 font-mono text-[11px]">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
-                  <span>Grant Dispatched On-Chain</span>
-                </div>
-                <a
-                  href={`${COOKIE_CHAIN_CONFIG.explorerUrl}/tx/${receipt.signature}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-0.5 text-amber-400 hover:underline font-mono text-[10px]"
-                >
-                  <span>CookieScan</span>
-                  <ArrowUpRight className="h-3 w-3" />
-                </a>
-              </div>
-            )}
+          <div className="flex items-center justify-between rounded-xl border border-emerald-500/30 bg-emerald-500/[0.05] p-3 text-xs text-emerald-400 animate-in fade-in">
+            <div className="flex items-center gap-1.5 font-mono text-[11px]">
+              <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+              <span>Grant Dispatched on Cookie Chain!</span>
+            </div>
+            <a
+              href={`${COOKIE_CHAIN_CONFIG.explorerUrl}/tx/${receipt.signature}`}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1 text-amber-400 hover:underline font-mono text-[11px] font-bold"
+            >
+              <span>CookieScan</span>
+              <ArrowUpRight className="h-3.5 w-3.5" />
+            </a>
           </div>
         )}
       </div>

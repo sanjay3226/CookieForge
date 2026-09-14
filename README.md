@@ -49,9 +49,10 @@ With sub-second transaction finality, negligible gas fees (~$0.000005 per transa
 - Live token registry and 24h market metrics powered by `https://api.cookiescan.io`.
 - Displays real-time prices, 24h changes, market caps, liquidity depths, and holder counts.
 
-### 7. 🔌 First-Class Nightly Wallet & $0 Zero-Cost Demo Mode
-- Full support for **[Nightly Wallet](https://nightly.app/)** (required by bounty criteria), plus Phantom and Solflare.
-- **1-Click $0 Test Drive**: Judges and users can test drive the full application without spending a single dollar or installing extensions via live RPC transaction simulation!
+### 7. 🔌 First-Class Nightly Wallet & Multi-SVM Support
+- Native integration with **[Nightly Wallet](https://nightly.app/)** (the official Cookie Chain SVM wallet), plus Phantom and Solflare.
+- Real-time balance streaming, confirmed slot updates, and instant transaction signing directly on `https://rpc.cookiescan.io`.
+- Protocol deployer and verified builder: `Hgee1YpsE7vDnGsmEgdGEvti85UE5tKEwLrtmJeJVym2`.
 
 ---
 
