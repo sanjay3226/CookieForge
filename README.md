@@ -28,7 +28,7 @@ With sub-second transaction finality, negligible gas fees (~$0.000005 per transa
 - **Bakery Ledger**: Real-time explorer feed of recent on-chain fortunes with instant links to [CookieScan](https://cookiescan.io).
 
 ### 2. 🍯 Community Cookie Jar (Public Goods Tip Box)
-- Send 1-click micro-tips in native `COOK` to the ecosystem public goods treasury (`8nj4iBHZugPZ4T1NPM47zazSjhp68gHYkX6GbLdmT3AP`).
+- Send 1-click micro-tips in native `COOK` directly to the creator & builder vault (`Hgee1YpsE7vDnGsmEgdGEvti85UE5tKEwLrtmJeJVym2`).
 - Appends an on-chain thank-you memo to the transaction log.
 
 ### 3. ⚡ DEX Terminal & Liquidity Aggregator
