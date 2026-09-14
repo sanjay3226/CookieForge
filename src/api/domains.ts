@@ -1,6 +1,6 @@
 // Client for Cookie Chain .cook Name Service (CookOven)
 import { Connection, PublicKey } from "@solana/web3.js";
-import { COOKIE_CHAIN_CONFIG, COOKIE_PROGRAMS } from "../utils/constants";
+import { COOKIE_PROGRAMS } from "../utils/constants";
 
 export interface DomainLookupResult {
   name: string;

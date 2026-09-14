@@ -1,22 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { 
-  ArrowRightLeft, 
   ExternalLink, 
   ShieldCheck, 
-  Clock, 
-  Layers, 
-  ArrowRight,
   Copy,
   Check,
-  Zap,
-  Globe,
-  Coins,
-  Cpu,
-  FileCode2,
-  Trophy,
-  CheckCircle2
+  Globe
 } from "lucide-react";
-import { Connection, PublicKey } from "@solana/web3.js";
+import { Connection } from "@solana/web3.js";
 import { getBridgeStatus, BridgeStatusInfo } from "../api/bridge";
 import { shortenAddress } from "../utils/format";
 import { COOKIE_CHAIN_CONFIG, COOKIE_PROGRAMS, KNOWN_MINTS } from "../utils/constants";

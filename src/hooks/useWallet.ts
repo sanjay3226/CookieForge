@@ -1,7 +1,6 @@
 // Multi-Wallet Hook with Native Nightly, Phantom & Solflare Support on Cookie Chain SVM
 import { useState, useEffect, useCallback } from "react";
 import { Connection, PublicKey, Transaction } from "@solana/web3.js";
-import { COOKIE_CHAIN_CONFIG } from "../utils/constants";
 
 export type WalletType = "nightly" | "phantom" | "solflare" | "injected";
 

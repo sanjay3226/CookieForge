@@ -1,4 +1,4 @@
-import { PublicKey, Keypair, SystemProgram, Transaction } from "@solana/web3.js";
+import { PublicKey, Keypair } from "@solana/web3.js";
 import { describe, it } from "node:test";
 import assert from "node:assert";
 

@@ -9,9 +9,9 @@ import {
   Layers,
   Info,
 } from "lucide-react";
-import { Transaction, SystemProgram, PublicKey, Connection } from "@solana/web3.js";
+import { Transaction, PublicKey, Connection } from "@solana/web3.js";
 import { createMemoInstruction } from "../utils/memo";
-import { COOKIE_CHAIN_CONFIG, CREATOR_WALLET } from "../utils/constants";
+import { COOKIE_CHAIN_CONFIG } from "../utils/constants";
 import { shortenAddress } from "../utils/format";
 import { playSuccessChime } from "../utils/audio";
 
@@ -61,13 +61,17 @@ export const FortuneBakery: React.FC<Props> = ({ wallet, connection }) => {
     if (!text) { setError("Please type a message first."); return; }
     if (text.length > 128) { setError("Message is too long (max 128 characters)."); return; }
 
+    if (wallet.balanceCook <= 0) {
+      setError("Your connected wallet has 0.000 COOK. You need a tiny fraction (~0.000005 COOK) for network gas.");
+      return;
+    }
+
     setIsSending(true);
     setError(null);
     const t0 = Date.now();
 
     try {
-      // Always use the on-chain Memo program — guaranteed to work on Cookie Chain
-      // The memo program (MemoSq4...) is a standard Solana-compatible program
+      // The on-chain Memo program embeds UTF-8 text permanently into Cookie Chain
       const tx = new Transaction();
 
       // Tag the memo so it shows up in the explorer with CookieForge branding
@@ -76,15 +80,6 @@ export const FortuneBakery: React.FC<Props> = ({ wallet, connection }) => {
           `[CookieForge] ${text}`,
           wallet.publicKey!
         )
-      );
-
-      // Attach a self-transfer dust so it registers as a transfer in explorer views
-      tx.add(
-        SystemProgram.transfer({
-          fromPubkey: wallet.publicKey!,
-          toPubkey: wallet.publicKey!,
-          lamports: 1_000, // 0.000001 COOK
-        })
       );
 
       const { signature } = await wallet.sendTransaction(tx);
@@ -113,8 +108,8 @@ export const FortuneBakery: React.FC<Props> = ({ wallet, connection }) => {
       // Surface a human-readable error
       if (msg.includes("rejected") || msg.includes("User rejected") || msg.includes("cancelled")) {
         setError("You cancelled the transaction.");
-      } else if (msg.includes("insufficient") || msg.includes("0x1")) {
-        setError("Not enough COOK for the fee. Your balance is too low.");
+      } else if (msg.includes("AccountNotFound") || msg.includes("insufficient") || msg.includes("0x1")) {
+        setError("Account has 0 COOK balance on Cookie Chain. Fund your wallet to pay the gas fee (~0.000005 COOK).");
       } else if (msg.includes("blockhash")) {
         setError("Network timeout — please try again.");
       } else {
@@ -193,6 +188,23 @@ export const FortuneBakery: React.FC<Props> = ({ wallet, connection }) => {
             <div className="rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-300 anim-fade-in flex items-start justify-between gap-2">
               <span>{error}</span>
               <button type="button" onClick={() => setError(null)} className="text-red-400 hover:text-white shrink-0 text-lg leading-none">×</button>
+            </div>
+          )}
+
+          {/* Zero COOK Balance Notice */}
+          {wallet.connected && wallet.balanceCook <= 0 && (
+            <div className="rounded-xl border border-amber-500/25 bg-amber-500/10 px-3.5 py-2.5 text-xs text-amber-200 flex items-center justify-between gap-2 anim-fade-in">
+              <span className="font-sans">
+                <strong>Wallet Unfunded:</strong> 0.000 COOK balance. Network gas requires ~0.000005 COOK.
+              </span>
+              <a
+                href={COOKIE_CHAIN_CONFIG.bridgeUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="font-mono text-[11px] font-bold text-amber-300 hover:underline flex items-center gap-1 shrink-0"
+              >
+                Bridge COOK <ExternalLink className="h-3 w-3" />
+              </a>
             </div>
           )}
 

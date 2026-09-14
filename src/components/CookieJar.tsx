@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Coins, ExternalLink, Send, CheckCircle2, ShieldCheck, ArrowUpRight, Wallet } from "lucide-react";
+import { Coins, ExternalLink, CheckCircle2, ArrowUpRight, Wallet } from "lucide-react";
 import { Transaction, SystemProgram, PublicKey } from "@solana/web3.js";
 import { createMemoInstruction } from "../utils/memo";
 import { CREATOR_WALLET, COOKIE_CHAIN_CONFIG } from "../utils/constants";
@@ -40,6 +40,11 @@ export const CookieJar: React.FC<CommunityTreasuryProps> = ({ wallet }) => {
     const num = parseFloat(tipAmount);
     if (isNaN(num) || num <= 0) return;
 
+    if (wallet.balanceCook < num) {
+      setErrorMessage(`Insufficient balance: Wallet has ${wallet.balanceCook.toFixed(3)} COOK, but tried to tip ${num} COOK.`);
+      return;
+    }
+
     setIsSending(true);
     setReceipt(null);
     setErrorMessage(null);
@@ -71,8 +76,14 @@ export const CookieJar: React.FC<CommunityTreasuryProps> = ({ wallet }) => {
         amount: tipAmount,
       });
     } catch (err: any) {
-      console.error("Tip transfer error:", err);
-      setErrorMessage(err?.message || "Failed to send tip. Ensure sufficient COOK balance.");
+      const msg = err?.message || "";
+      if (msg.includes("AccountNotFound") || msg.includes("insufficient") || msg.includes("0x1")) {
+        setErrorMessage("Wallet has 0 or insufficient COOK balance on Cookie Chain.");
+      } else if (msg.includes("reject") || msg.includes("cancel")) {
+        setErrorMessage("Transaction cancelled.");
+      } else {
+        setErrorMessage(msg || "Failed to send tip. Ensure sufficient COOK balance.");
+      }
     } finally {
       setIsSending(false);
     }

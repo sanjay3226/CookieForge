@@ -2,18 +2,12 @@ import React, { useState, useEffect } from "react";
 import { 
   ArrowDownUp, 
   ExternalLink, 
-  RefreshCw,
-  Layers,
   SlidersHorizontal,
-  ArrowRight,
   Zap,
-  Wallet,
-  ShieldCheck,
-  CheckCircle2,
   Copy,
   Check
 } from "lucide-react";
-import { KNOWN_MINTS, COOKIE_CHAIN_CONFIG, COOKIE_PROGRAMS } from "../utils/constants";
+import { KNOWN_MINTS, COOKIE_PROGRAMS } from "../utils/constants";
 import { getSwapQuote, SwapQuote } from "../api/cookiebox";
 import { shortenAddress } from "../utils/format";
 
@@ -42,7 +36,6 @@ export const SwapTerminal: React.FC<SwapTerminalProps> = ({ wallet }) => {
   const [quote, setQuote] = useState<SwapQuote | null>(null);
   const [isLoadingQuote, setIsLoadingQuote] = useState(false);
   const [slippage, setSlippage] = useState("0.5");
-  const [connectError, setConnectError] = useState<string | null>(null);
   const [copiedMint, setCopiedMint] = useState<string | null>(null);
 
   useEffect(() => {
@@ -84,15 +77,6 @@ export const SwapTerminal: React.FC<SwapTerminalProps> = ({ wallet }) => {
     navigator.clipboard.writeText(text);
     setCopiedMint(id);
     setTimeout(() => setCopiedMint(null), 2000);
-  };
-
-  const handleConnect = async () => {
-    try {
-      setConnectError(null);
-      await wallet.connectNightly();
-    } catch (e: any) {
-      setConnectError(e?.message || "Failed to connect wallet.");
-    }
   };
 
   // Construct direct deep-link to Cookiebox DEX
@@ -213,7 +197,7 @@ export const SwapTerminal: React.FC<SwapTerminalProps> = ({ wallet }) => {
           <div className="flex justify-between">
             <span>Price impact</span>
             <span className="text-emerald-400 font-semibold">
-              {quote ? `&lt; ${quote.priceImpactPct}%` : "&lt; 0.05%"}
+              {quote ? `< ${quote.priceImpactPct}%` : "< 0.05%"}
             </span>
           </div>
           <div className="flex justify-between">
@@ -275,12 +259,6 @@ export const SwapTerminal: React.FC<SwapTerminalProps> = ({ wallet }) => {
             </button>
           </div>
         </div>
-
-        {connectError && (
-          <div className="mt-3 p-2 rounded-lg bg-red-500/10 border border-red-500/20 text-center text-xs font-mono text-red-300">
-            {connectError}
-          </div>
-        )}
       </div>
     </div>
   );

@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { ChainState } from "../hooks/useCookieChain";
 import { shortenAddress } from "../utils/format";
-import { COOKIE_CHAIN_CONFIG, CREATOR_WALLET } from "../utils/constants";
+import { COOKIE_CHAIN_CONFIG } from "../utils/constants";
 
 interface HeaderProps {
   chainState: ChainState;

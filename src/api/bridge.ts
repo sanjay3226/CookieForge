@@ -1,6 +1,4 @@
-// Hyperlane Warp Route & Collateral Status for Cookie Chain ⇄ Solana Bridge
 import { Connection, PublicKey } from "@solana/web3.js";
-import { COOKIE_CHAIN_CONFIG } from "../utils/constants";
 
 export interface BridgeStatusInfo {
   cookieWarpProgram: string;
