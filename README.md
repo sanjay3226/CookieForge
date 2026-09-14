@@ -162,7 +162,7 @@ Below is the ready-to-post Twitter thread showcasing CookieForge for the Cookie 
 
 Bake on-chain fortunes, aggregate DEX swaps, resolve .cook domains & bridge over Hyperlane in sub-seconds.
 
-Try it live: [YOUR_VERCEL_URL]
+Try it live: https://cookie-forge.vercel.app
 GitHub: https://github.com/sanjay3226/CookieForge
 
 🧵👇
