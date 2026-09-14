@@ -126,12 +126,25 @@ export const DomainResolver: React.FC<DomainResolverProps> = ({ connection }) =>
                 </div>
               </>
             ) : (
-              <div className="flex justify-between items-center text-neutral-400">
-                <span>Registration Cost</span>
-                <span className="font-bold text-amber-300">
-                  {result.estimatedCostCook?.toLocaleString()} COOK
-                </span>
-              </div>
+              <>
+                <div className="flex justify-between items-center text-neutral-400">
+                  <span>Registration Cost</span>
+                  <span className="font-bold text-amber-300">
+                    {result.estimatedCostCook?.toLocaleString()} COOK
+                  </span>
+                </div>
+                <div className="pt-2">
+                  <a
+                    href="https://cookoven.com"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 py-2.5 text-xs font-bold text-neutral-950 transition font-mono"
+                  >
+                    <span>Register {result.name} on CookOven</span>
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
+                </div>
+              </>
             )}
           </div>
         </div>

@@ -29,7 +29,11 @@ export const CookieJar: React.FC<CommunityTreasuryProps> = ({ wallet }) => {
 
   const handleSendTip = async () => {
     if (!wallet.connected) {
-      wallet.connectNightly().catch((e) => alert(e.message));
+      try {
+        await wallet.connectNightly();
+      } catch (e: any) {
+        setErrorMessage(e?.message || "Please connect your wallet first.");
+      }
       return;
     }
 

@@ -131,7 +131,7 @@ export function App() {
               }`}
             >
               <Layers className="h-3.5 w-3.5" />
-              <span>Hyperlane Warp Route</span>
+              <span>Ecosystem Gateways & Warp Route</span>
             </button>
 
             <button

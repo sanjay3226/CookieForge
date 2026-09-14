@@ -95,7 +95,11 @@ export const FortuneBakery: React.FC<InscriptionEngineProps> = ({ wallet, connec
 
   const handleInscribe = async () => {
     if (!wallet.connected) {
-      wallet.connectNightly().catch((e) => alert(e.message));
+      try {
+        await wallet.connectNightly();
+      } catch (e: any) {
+        setBroadcastError(e?.message || "Please connect your wallet to inscribe fortunes.");
+      }
       return;
     }
 

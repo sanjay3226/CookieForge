@@ -1,19 +1,21 @@
 import React, { useState, useEffect } from "react";
 import { 
   ArrowDownUp, 
-  Settings, 
   ExternalLink, 
   RefreshCw,
   Layers,
-  CheckCircle2,
   SlidersHorizontal,
   ArrowRight,
   Zap,
-  Wallet
+  Wallet,
+  ShieldCheck,
+  CheckCircle2,
+  Copy,
+  Check
 } from "lucide-react";
-import { KNOWN_MINTS, COOKIE_CHAIN_CONFIG } from "../utils/constants";
+import { KNOWN_MINTS, COOKIE_CHAIN_CONFIG, COOKIE_PROGRAMS } from "../utils/constants";
 import { getSwapQuote, SwapQuote } from "../api/cookiebox";
-import { playSuccessChime } from "../utils/audio";
+import { shortenAddress } from "../utils/format";
 
 interface SwapTerminalProps {
   wallet: {
@@ -21,18 +23,7 @@ interface SwapTerminalProps {
     publicKey: any;
     balanceCook: number;
     connectNightly: () => Promise<void>;
-    sendTransaction: (tx: any) => Promise<{ signature: string }>;
   };
-}
-
-interface SwapResult {
-  fromAmt: string;
-  fromSymbol: string;
-  toAmt: string;
-  toSymbol: string;
-  venue: string;
-  latencyMs: number;
-  signature?: string;
 }
 
 const AVAILABLE_TOKENS = [
@@ -51,8 +42,8 @@ export const SwapTerminal: React.FC<SwapTerminalProps> = ({ wallet }) => {
   const [quote, setQuote] = useState<SwapQuote | null>(null);
   const [isLoadingQuote, setIsLoadingQuote] = useState(false);
   const [slippage, setSlippage] = useState("0.5");
-  const [isSwapping, setIsSwapping] = useState(false);
-  const [swapResult, setSwapResult] = useState<SwapResult | null>(null);
+  const [connectError, setConnectError] = useState<string | null>(null);
+  const [copiedMint, setCopiedMint] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -83,235 +74,213 @@ export const SwapTerminal: React.FC<SwapTerminalProps> = ({ wallet }) => {
     const temp = fromToken;
     setFromToken(toToken);
     setToToken(temp);
-    setSwapResult(null);
   };
 
   const toAmountCalculated = quote
     ? (parseFloat(quote.netOutAmount) / 1_000_000_000).toFixed(4)
     : (parseFloat(fromAmount || "0") * 0.995).toFixed(4);
 
-  const handleExecuteSwap = async () => {
-    if (!wallet.connected) {
-      wallet.connectNightly().catch((e) => alert(e.message));
-      return;
-    }
+  const handleCopy = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedMint(id);
+    setTimeout(() => setCopiedMint(null), 2000);
+  };
 
-    setIsSwapping(true);
-    setSwapResult(null);
-    const startTime = Date.now();
-
+  const handleConnect = async () => {
     try {
-      // In production, opens the exact swap route on Cookiebox AMM
-      await new Promise((r) => setTimeout(r, 600));
-      const elapsed = Date.now() - startTime;
-      playSuccessChime();
-
-      setSwapResult({
-        fromAmt: fromAmount,
-        fromSymbol: fromToken.symbol,
-        toAmt: toAmountCalculated,
-        toSymbol: toToken.symbol,
-        venue: quote?.dexVenue || "Cookiebox DAMM v2",
-        latencyMs: elapsed,
-      });
-    } catch (err: any) {
-      console.error("Swap execution error:", err);
-    } finally {
-      setIsSwapping(false);
+      setConnectError(null);
+      await wallet.connectNightly();
+    } catch (e: any) {
+      setConnectError(e?.message || "Failed to connect wallet.");
     }
   };
 
+  // Construct direct deep-link to Cookiebox DEX
+  const cookieboxSwapUrl = `https://cookiebox.fun`;
+
   return (
-    <div className="max-w-md mx-auto rounded-2xl border border-white/[0.08] bg-[#0c0f16]/95 p-6 shadow-2xl backdrop-blur-xl">
-      {/* Top Header */}
-      <div className="flex items-center justify-between pb-4 border-b border-white/[0.06] mb-4">
-        <div>
-          <h3 className="text-sm font-bold uppercase tracking-wider font-mono text-white">
-            Cookiebox DEX Terminal
-          </h3>
-          <p className="text-[11px] text-neutral-400 font-mono mt-0.5">
-            Aggregated Liquidity across Cookie Chain AMMs
-          </p>
-        </div>
-
-        <div className="flex items-center gap-1 text-[10px] font-mono text-neutral-400 bg-black/40 px-2.5 py-1 rounded-lg border border-white/[0.06]">
-          <SlidersHorizontal className="h-3 w-3" />
-          <span>{slippage}% Slip</span>
-        </div>
-      </div>
-
-      {/* From Box */}
-      <div className="rounded-xl border border-white/[0.06] bg-black/40 p-3.5 mb-2">
-        <div className="flex justify-between items-center text-[11px] font-mono text-neutral-500 mb-1.5">
-          <span>You Pay</span>
-          <span>Balance: {wallet.connected ? wallet.balanceCook.toFixed(4) : "0.00"} COOK</span>
-        </div>
-
-        <div className="flex items-center justify-between gap-3">
-          <input
-            type="number"
-            value={fromAmount}
-            onChange={(e) => setFromAmount(e.target.value)}
-            placeholder="0.0"
-            className="w-full bg-transparent text-xl font-bold font-mono text-white outline-none"
-          />
-
-          <select
-            value={fromToken.symbol}
-            onChange={(e) => {
-              const selected = AVAILABLE_TOKENS.find((t) => t.symbol === e.target.value);
-              if (selected) setFromToken(selected);
-            }}
-            className="rounded-xl border border-white/[0.1] bg-black px-3 py-1.5 font-mono text-xs font-bold text-white outline-none cursor-pointer"
-          >
-            {AVAILABLE_TOKENS.map((t) => (
-              <option key={t.symbol} value={t.symbol}>
-                {t.symbol}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {/* Flip Button */}
-      <div className="flex justify-center -my-2 relative z-10">
-        <button
-          type="button"
-          onClick={handleFlip}
-          className="rounded-xl border border-white/[0.1] bg-[#141822] p-2 text-neutral-400 hover:text-amber-400 hover:border-amber-500/30 transition shadow-lg"
-        >
-          <ArrowDownUp className="h-3.5 w-3.5" />
-        </button>
-      </div>
-
-      {/* To Box */}
-      <div className="rounded-xl border border-white/[0.06] bg-black/40 p-3.5 mt-2 mb-4">
-        <div className="flex justify-between items-center text-[11px] font-mono text-neutral-500 mb-1.5">
-          <span>You Receive (Estimated)</span>
-          <span>{isLoadingQuote ? "Fetching route..." : "100% On-Chain"}</span>
-        </div>
-
-        <div className="flex items-center justify-between gap-3">
-          <div className="text-xl font-bold font-mono text-white">
-            {isLoadingQuote ? "..." : toAmountCalculated}
+    <div className="max-w-xl mx-auto space-y-4">
+      <div className="rounded-2xl border border-white/[0.08] bg-[#0c0f16]/95 p-6 shadow-2xl backdrop-blur-xl">
+        {/* Top Header */}
+        <div className="flex items-center justify-between pb-4 border-b border-white/[0.06] mb-4">
+          <div>
+            <div className="flex items-center gap-2 font-mono text-[11px] text-amber-400 font-semibold mb-0.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>COOKIEBOX LIQUIDITY ROUTER</span>
+            </div>
+            <h3 className="text-base font-bold font-mono text-white">
+              Dynamic AMM & Pool Routing Engine
+            </h3>
+            <p className="text-[11px] text-neutral-400 font-mono mt-0.5">
+              Live quote aggregation across verified Cookie Chain AMM liquidity pools
+            </p>
           </div>
 
-          <select
-            value={toToken.symbol}
-            onChange={(e) => {
-              const selected = AVAILABLE_TOKENS.find((t) => t.symbol === e.target.value);
-              if (selected) setToToken(selected);
-            }}
-            className="rounded-xl border border-white/[0.1] bg-black px-3 py-1.5 font-mono text-xs font-bold text-white outline-none cursor-pointer"
-          >
-            {AVAILABLE_TOKENS.map((t) => (
-              <option key={t.symbol} value={t.symbol}>
-                {t.symbol}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {/* Route Info */}
-      {quote && (
-        <div className="rounded-xl border border-white/[0.05] bg-black/30 p-3 text-[11px] font-mono text-neutral-400 space-y-1.5 mb-4">
-          <div className="flex justify-between">
-            <span className="text-neutral-500">Routing AMM</span>
-            <span className="text-neutral-200 font-bold">{quote.dexVenue}</span>
+          <div className="flex items-center gap-1 text-[10px] font-mono text-neutral-400 bg-black/40 px-2.5 py-1 rounded-lg border border-white/[0.06]">
+            <SlidersHorizontal className="h-3 w-3" />
+            <span>{slippage}% Slip</span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-neutral-500">Execution Route</span>
-            <span className="text-neutral-300 flex items-center gap-1">
-              <span>{fromToken.symbol}</span>
-              <ArrowRight className="h-2.5 w-2.5" />
-              <span className="text-amber-400">{quote.dexVenue}</span>
-              <ArrowRight className="h-2.5 w-2.5" />
-              <span>{toToken.symbol}</span>
+        </div>
+
+        {/* From Box */}
+        <div className="rounded-xl border border-white/[0.06] bg-black/40 p-3.5 mb-2">
+          <div className="flex justify-between items-center text-[11px] font-mono text-neutral-500 mb-1.5">
+            <span>You Pay</span>
+            <span>Balance: {wallet.connected ? wallet.balanceCook.toFixed(4) : "0.00"} COOK</span>
+          </div>
+
+          <div className="flex items-center justify-between gap-3">
+            <input
+              type="number"
+              value={fromAmount}
+              onChange={(e) => setFromAmount(e.target.value)}
+              placeholder="0.0"
+              className="w-full bg-transparent text-2xl font-bold font-mono text-white outline-none"
+            />
+
+            <select
+              value={fromToken.symbol}
+              onChange={(e) => {
+                const found = AVAILABLE_TOKENS.find((t) => t.symbol === e.target.value);
+                if (found) setFromToken(found);
+              }}
+              className="rounded-xl border border-white/[0.08] bg-[#161a24] px-3 py-2 text-xs font-mono font-bold text-white outline-none cursor-pointer hover:border-amber-500/50 transition"
+            >
+              {AVAILABLE_TOKENS.map((t) => (
+                <option key={t.symbol} value={t.symbol}>
+                  {t.symbol}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Flip Button */}
+        <div className="flex justify-center -my-2 relative z-10">
+          <button
+            type="button"
+            onClick={handleFlip}
+            className="rounded-full border border-white/[0.1] bg-[#1a1f2c] p-2 text-neutral-400 hover:text-amber-400 hover:border-amber-500/50 transition shadow-lg active:scale-90"
+            title="Switch Pair Direction"
+          >
+            <ArrowDownUp className="h-3.5 w-3.5" />
+          </button>
+        </div>
+
+        {/* To Box */}
+        <div className="rounded-xl border border-white/[0.06] bg-black/40 p-3.5 mt-2 mb-4">
+          <div className="flex justify-between items-center text-[11px] font-mono text-neutral-500 mb-1.5">
+            <span>You Receive (Estimated)</span>
+            <span className="text-emerald-400">Best Route</span>
+          </div>
+
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-2xl font-bold font-mono text-white">
+              {isLoadingQuote ? (
+                <span className="text-neutral-500 animate-pulse">Calculating...</span>
+              ) : (
+                toAmountCalculated
+              )}
+            </div>
+
+            <select
+              value={toToken.symbol}
+              onChange={(e) => {
+                const found = AVAILABLE_TOKENS.find((t) => t.symbol === e.target.value);
+                if (found) setToToken(found);
+              }}
+              className="rounded-xl border border-white/[0.08] bg-[#161a24] px-3 py-2 text-xs font-mono font-bold text-white outline-none cursor-pointer hover:border-amber-500/50 transition"
+            >
+              {AVAILABLE_TOKENS.map((t) => (
+                <option key={t.symbol} value={t.symbol}>
+                  {t.symbol}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Route Details Panel */}
+        <div className="rounded-xl border border-white/[0.05] bg-black/20 p-3.5 text-[11px] font-mono space-y-1.5 text-neutral-400 mb-4">
+          <div className="flex justify-between items-center">
+            <span>Aggregated Routing Venue</span>
+            <span className="text-white font-semibold flex items-center gap-1">
+              <Zap className="h-3 w-3 text-amber-400" />
+              <span>Cookiebox DAMM v2</span>
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-neutral-500">Price Impact</span>
-            <span className="text-emerald-400">&lt;0.05%</span>
+            <span>Est. Price Impact</span>
+            <span className="text-emerald-400 font-semibold">
+              {quote ? `< ${quote.priceImpactPct}%` : "< 0.05%"}
+            </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-neutral-500">Network Gas</span>
-            <span className="text-neutral-300">0.000005 COOK ($0.0000004)</span>
+            <span>Estimated Gas Cost</span>
+            <span className="text-neutral-300 font-semibold">0.000005 COOK (&lt; $0.0001)</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Minimum Received (Slip {slippage}%)</span>
+            <span className="text-neutral-200 font-semibold">
+              {(parseFloat(toAmountCalculated) * (1 - parseFloat(slippage) / 100)).toFixed(4)}{" "}
+              {toToken.symbol}
+            </span>
           </div>
         </div>
-      )}
 
-      {/* Slippage Pills */}
-      <div className="mb-4 flex items-center justify-between text-[11px] font-mono text-neutral-400 px-1">
-        <span>Slippage Tolerance:</span>
-        <div className="flex gap-1.5">
-          {["0.1", "0.5", "1.0"].map((s) => (
+        {/* Slippage Selection */}
+        <div className="flex items-center justify-between text-xs font-mono mb-4 px-1">
+          <span className="text-neutral-500 text-[11px]">Slippage Tolerance:</span>
+          <div className="flex gap-1.5">
+            {["0.1", "0.5", "1.0"].map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setSlippage(s)}
+                className={`rounded-lg px-2.5 py-1 text-[10px] transition border ${
+                  slippage === s 
+                    ? "bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold" 
+                    : "border-white/[0.05] text-neutral-500 hover:text-white"
+                }`}
+              >
+                {s}%
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Action Button: Launch on Cookiebox AMM */}
+        <a
+          href={cookieboxSwapUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 active:scale-[0.99] py-3.5 text-xs font-bold text-neutral-950 transition shadow-xl shadow-amber-500/15"
+        >
+          <span>Execute Trade on Cookiebox AMM</span>
+          <ExternalLink className="h-3.5 w-3.5" />
+        </a>
+
+        {/* Verified AMM Program Spec */}
+        <div className="mt-4 pt-3 border-t border-white/[0.06] flex items-center justify-between text-[11px] font-mono text-neutral-500">
+          <span>Verified DEX Program:</span>
+          <div className="flex items-center gap-1.5 text-neutral-400">
+            <span>{shortenAddress(COOKIE_PROGRAMS.cookieboxDammV2, 6)}</span>
             <button
-              key={s}
-              type="button"
-              onClick={() => setSlippage(s)}
-              className={`rounded-lg px-2 py-0.5 text-[10px] transition border ${
-                slippage === s 
-                  ? "bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold" 
-                  : "border-white/[0.05] text-neutral-500 hover:text-white"
-              }`}
+              onClick={() => handleCopy(COOKIE_PROGRAMS.cookieboxDammV2, "damm")}
+              className="hover:text-white transition"
+              title="Copy DAMM Program ID"
             >
-              {s}%
+              {copiedMint === "damm" ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
             </button>
-          ))}
+          </div>
         </div>
-      </div>
 
-      {/* Swap Button */}
-      <button
-        onClick={handleExecuteSwap}
-        disabled={isSwapping}
-        className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 active:scale-[0.99] py-3.5 text-xs font-bold text-neutral-950 transition disabled:opacity-50 shadow-xl shadow-amber-500/15"
-      >
-        {isSwapping ? (
-          <>
-            <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-            <span>Executing via Cookiebox AMM...</span>
-          </>
-        ) : !wallet.connected ? (
-          <>
-            <Wallet className="h-3.5 w-3.5" />
-            <span>Connect Nightly Wallet to Swap</span>
-          </>
-        ) : (
-          <span>Execute Swap ({fromAmount} {fromToken.symbol})</span>
+        {connectError && (
+          <div className="mt-3 p-2 rounded-lg bg-red-500/10 border border-red-500/20 text-center text-xs font-mono text-red-300">
+            {connectError}
+          </div>
         )}
-      </button>
-
-      {/* Settled Feedback */}
-      {swapResult && (
-        <div className="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-500/[0.04] p-3 text-xs font-mono animate-in fade-in space-y-2">
-          <div className="flex items-center justify-between text-emerald-400 font-bold">
-            <div className="flex items-center gap-1.5">
-              <CheckCircle2 className="h-3.5 w-3.5" />
-              <span>Route Settled ({swapResult.latencyMs}ms)</span>
-            </div>
-            <span className="text-[10px] text-neutral-400">&lt;800ms Finality</span>
-          </div>
-
-          <p className="text-[11px] text-neutral-300 font-sans">
-            Routed {swapResult.fromAmt} {swapResult.fromSymbol} → {swapResult.toAmt} {swapResult.toSymbol} via {swapResult.venue}.
-          </p>
-
-          <div className="flex items-center justify-between pt-1 border-t border-white/[0.06] text-[10px]">
-            <span className="text-neutral-500">Live AMM Pool:</span>
-            <a
-              href="https://cookiebox.app/"
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-1 text-amber-400 hover:underline font-bold"
-            >
-              <span>Verify on Cookiebox</span>
-              <ExternalLink className="h-2.5 w-2.5" />
-            </a>
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 };
