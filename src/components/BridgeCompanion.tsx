@@ -169,15 +169,14 @@ export const BridgeCompanion: React.FC<BridgeCompanionProps> = ({ connection }) 
           <div>
             <div className="flex items-center gap-2 font-mono text-xs text-amber-400 font-semibold mb-1">
               <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>HYPERLANE WARP ROUTE PIPELINE</span>
-              <span className="text-neutral-600">•</span>
-              <span className="text-emerald-400">Mainnet Route Active</span>
+              <span>BRIDGE · LIVE</span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-              Institutional Cross-Chain Gateway
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white"
+                style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
+              Move Tokens Between Networks
             </h2>
-            <p className="text-xs text-neutral-400 font-mono mt-1 max-w-2xl">
-              Bidirectional warp bridge routing native <span className="text-amber-300 font-bold">COOK</span> and <span className="text-amber-300 font-bold">bCOOK</span> between Cookie Chain SVM and Solana Mainnet with sub-2min relayer settlement.
+            <p className="text-xs text-[#64748b] mt-1 max-w-xl">
+              Transfer <span className="text-amber-300 font-bold">COOK</span> between Cookie Chain and Solana Mainnet in under 2 minutes. Powered by Hyperlane.
             </p>
           </div>
 
@@ -185,9 +184,9 @@ export const BridgeCompanion: React.FC<BridgeCompanionProps> = ({ connection }) 
             href={COOKIE_CHAIN_CONFIG.bridgeUrl}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 active:scale-[0.98] px-5 py-2.5 text-xs font-bold text-neutral-950 transition shadow-lg shadow-amber-500/15 whitespace-nowrap self-start md:self-auto"
+            className="btn-primary text-xs py-2.5 px-5 whitespace-nowrap self-start md:self-auto"
           >
-            <span>Launch Warp Portal</span>
+            <span>Open Bridge</span>
             <ExternalLink className="h-3.5 w-3.5" />
           </a>
         </div>
@@ -315,12 +314,13 @@ export const BridgeCompanion: React.FC<BridgeCompanionProps> = ({ connection }) 
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h3 className="text-base font-bold font-mono text-white flex items-center gap-2">
+            <h3 className="text-base font-bold text-white flex items-center gap-2"
+                style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
               <Globe className="h-4 w-4 text-amber-400" />
-              <span>Official Cookie Chain Ecosystem Portals & Launchpad</span>
+              <span>Cookie Chain Apps &amp; Tools</span>
             </h3>
-            <p className="text-xs text-neutral-400 font-mono mt-0.5">
-              Verified infrastructure gateways and smart contract applications across the SVM network.
+            <p className="text-xs text-[#64748b] mt-0.5">
+              Official apps on Cookie Chain — verified and working.
             </p>
           </div>
 

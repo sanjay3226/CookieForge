@@ -1,15 +1,14 @@
 import React, { useState } from "react";
-import { 
-  Copy, 
-  Check, 
-  ExternalLink, 
-  ChevronDown, 
-  Settings2, 
+import {
+  Copy,
+  Check,
+  ExternalLink,
+  ChevronDown,
+  Settings2,
   Activity,
-  Terminal,
+  Feather,
   Power,
-  ShieldCheck,
-  Wallet
+  Wallet,
 } from "lucide-react";
 import { ChainState } from "../hooks/useCookieChain";
 import { shortenAddress } from "../utils/format";
@@ -32,22 +31,17 @@ interface HeaderProps {
   onOpenNetworkGuide: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ 
-  chainState, 
-  wallet, 
-  onOpenNetworkGuide 
-}) => {
+export const Header: React.FC<HeaderProps> = ({ chainState, wallet, onOpenNetworkGuide }) => {
   const [copied, setCopied] = useState(false);
-  const [copiedCreator, setCopiedCreator] = useState(false);
   const [walletMenuOpen, setWalletMenuOpen] = useState(false);
   const [connectError, setConnectError] = useState<string | null>(null);
 
-  const handleWalletError = (msg: string) => {
+  const err = (msg: string) => {
     setConnectError(msg);
     setTimeout(() => setConnectError(null), 5000);
   };
 
-  const handleCopy = () => {
+  const copyAddr = () => {
     if (wallet.publicKey) {
       navigator.clipboard.writeText(wallet.publicKey.toBase58());
       setCopied(true);
@@ -55,227 +49,157 @@ export const Header: React.FC<HeaderProps> = ({
     }
   };
 
-  const handleCopyCreator = () => {
-    navigator.clipboard.writeText(CREATOR_WALLET);
-    setCopiedCreator(true);
-    setTimeout(() => setCopiedCreator(false), 2000);
-  };
-
   return (
-    <header className="sticky top-0 z-40 border-b border-white/[0.08] bg-[#07090e]/95 backdrop-blur-xl">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-        {/* Brand & Network */}
-        <div className="flex items-center gap-3 sm:gap-5">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-amber-500/30 bg-gradient-to-br from-amber-500/20 to-amber-500/5 text-amber-400 shadow-md shadow-amber-500/10">
-              <Terminal className="h-4.5 w-4.5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="font-bold tracking-tight text-white text-base">CookieForge</span>
-                <span className="rounded bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.2 text-[9px] font-mono font-bold text-amber-300">
-                  SVM MAINNET
-                </span>
-              </div>
-              <p className="text-[10px] text-neutral-500 font-mono hidden sm:block">
-                High-Performance Infrastructure Terminal
-              </p>
-            </div>
+    <header className="sticky top-0 z-40 border-b border-white/[0.07] bg-[#07090e]/95 backdrop-blur-xl">
+      <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-4 sm:px-6">
+
+        {/* Brand */}
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/10">
+            <Feather className="h-4 w-4 text-amber-400" />
+          </div>
+          <div>
+            <span className="font-bold text-white text-sm tracking-tight"
+                  style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
+              CookieForge
+            </span>
+            <span className="ml-2 rounded-full bg-amber-500/15 border border-amber-500/25 px-1.5 py-0.5 text-[9px] font-mono text-amber-300">
+              MAINNET
+            </span>
           </div>
 
-          <div className="h-5 w-px bg-white/[0.08] hidden lg:block" />
-
-          {/* Network Telemetry */}
-          <div className="hidden lg:flex items-center gap-3 text-[11px] font-mono text-neutral-400">
-            <div className="flex items-center gap-1.5">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60"></span>
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+          {/* Network status – shown only on wide screens */}
+          <div className="hidden lg:flex items-center gap-3 ml-4 text-[11px] font-mono text-[#64748b]">
+            <span className="text-white/10">|</span>
+            <span className="flex items-center gap-1.5 text-[#94a3b8]">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
               </span>
-              <span className="text-neutral-200 font-medium">RPC Connected</span>
-            </div>
-
-            <span className="text-white/[0.15]">•</span>
-
-            <div className="flex items-center gap-1">
-              <span className="text-neutral-500">Slot</span>
-              <span className="text-neutral-200 font-semibold">{chainState.slot.toLocaleString()}</span>
-            </div>
-
-            <span className="text-white/[0.15]">•</span>
-
-            <div className="flex items-center gap-1 text-emerald-400">
+              Connected
+            </span>
+            <span>Block {chainState.slot.toLocaleString()}</span>
+            <span className="text-emerald-400 flex items-center gap-1">
               <Activity className="h-3 w-3" />
-              <span>{chainState.pingMs}ms</span>
-            </div>
-
+              {chainState.pingMs}ms
+            </span>
             <button
               onClick={onOpenNetworkGuide}
-              className="text-neutral-500 hover:text-amber-400 transition p-1"
-              title="View Cookie Chain RPC Endpoints"
+              title="Network setup guide"
+              className="text-[#475569] hover:text-amber-400"
             >
               <Settings2 className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>
 
-        {/* Right: Creator Badge & Wallet Connect */}
-        <div className="flex items-center gap-2.5 sm:gap-3">
-          {/* Creator & Deployer Identification Badge */}
-          <div className="hidden md:flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-black/40 px-3 py-1.5 text-xs font-mono">
-            <ShieldCheck className="h-3.5 w-3.5 text-amber-400 shrink-0" />
-            <span className="text-neutral-500">Creator:</span>
-            <span className="text-neutral-200 font-semibold">{shortenAddress(CREATOR_WALLET, 4)}</span>
-            <button
-              onClick={handleCopyCreator}
-              className="ml-1 text-neutral-500 hover:text-amber-300 transition"
-              title="Copy Creator Address"
-            >
-              {copiedCreator ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
-            </button>
-            <a
-              href={`${COOKIE_CHAIN_CONFIG.explorerUrl}/address/${CREATOR_WALLET}`}
-              target="_blank"
-              rel="noreferrer"
-              className="text-neutral-500 hover:text-amber-300 transition ml-0.5"
-              title="View on CookieScan"
-            >
-              <ExternalLink className="h-3 w-3" />
-            </a>
-          </div>
-
+        {/* Wallet */}
+        <div className="flex items-center gap-2">
           {!wallet.connected ? (
             <div className="relative">
               <button
                 onClick={() => setWalletMenuOpen(!walletMenuOpen)}
                 disabled={wallet.connecting}
-                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 active:scale-[0.98] px-4 py-2 text-xs font-bold text-neutral-950 transition shadow-lg shadow-amber-500/15"
+                className="btn-primary text-xs py-2 px-3"
               >
                 <Wallet className="h-3.5 w-3.5" />
-                <span>{wallet.connecting ? "Connecting..." : "Connect Wallet"}</span>
-                <ChevronDown className="h-3 w-3 opacity-70" />
+                <span>{wallet.connecting ? "Connecting…" : "Connect Wallet"}</span>
+                <ChevronDown className="h-3 w-3 opacity-60" />
               </button>
 
               {walletMenuOpen && (
-                <div className="absolute right-0 mt-2 w-64 rounded-2xl border border-white/[0.1] bg-[#0f1218] p-2 shadow-2xl z-50 animate-in fade-in">
-                  <div className="px-3 py-1.5 text-[10px] uppercase font-mono tracking-wider text-neutral-500 border-b border-white/[0.06] mb-1.5 flex justify-between">
-                    <span>Select SVM Wallet</span>
-                    <span className="text-amber-400">Cookie Chain</span>
-                  </div>
+                <div
+                  className="absolute right-0 mt-2 w-60 rounded-2xl border border-white/[0.1] bg-[#0f1218] p-2 shadow-2xl z-50 anim-slide-down"
+                  onMouseLeave={() => setWalletMenuOpen(false)}
+                >
+                  <p className="px-3 pb-1.5 pt-1 text-[10px] font-mono text-[#475569] uppercase tracking-wider border-b border-white/[0.06] mb-1">
+                    Choose your wallet
+                  </p>
 
-                  {/* Nightly (Recommended) */}
-                  <button
-                    onClick={() => {
-                      setWalletMenuOpen(false);
-                      wallet.connectNightly().catch((e) => handleWalletError(e.message));
-                    }}
-                    className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-xs text-neutral-200 hover:bg-white/[0.06] transition"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className="h-6 w-6 rounded-lg bg-indigo-500/20 text-indigo-400 font-mono text-xs grid place-items-center font-bold">N</div>
-                      <div className="text-left">
-                        <div className="font-semibold text-white">Nightly Wallet</div>
-                        <div className="text-[10px] text-neutral-500">Official Cookie Chain SVM</div>
+                  {[
+                    {
+                      label: "Nightly",
+                      sub: "Best for Cookie Chain",
+                      badge: "Recommended",
+                      color: "text-indigo-400 bg-indigo-500/20",
+                      act: () => wallet.connectNightly().catch((e) => err(e.message)),
+                    },
+                    {
+                      label: "Phantom",
+                      sub: "Popular Solana wallet",
+                      color: "text-purple-400 bg-purple-500/20",
+                      act: () => wallet.connectStandard("phantom").catch((e) => err(e.message)),
+                    },
+                    {
+                      label: "Solflare",
+                      sub: "Solana wallet",
+                      color: "text-orange-400 bg-orange-500/20",
+                      act: () => wallet.connectStandard("solflare").catch((e) => err(e.message)),
+                    },
+                    {
+                      label: "Other Wallet",
+                      sub: "Any browser SVM wallet",
+                      color: "text-emerald-400 bg-emerald-500/20",
+                      act: () => wallet.connectInjected().catch((e) => err(e.message)),
+                    },
+                  ].map(({ label, sub, badge, color, act }) => (
+                    <button
+                      key={label}
+                      onClick={() => { setWalletMenuOpen(false); act(); }}
+                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs text-[#e2e8f0] hover:bg-white/[0.05] transition group"
+                    >
+                      <div className={`h-7 w-7 rounded-lg grid place-items-center text-[11px] font-bold shrink-0 ${color}`}>
+                        {label[0]}
                       </div>
-                    </div>
-                    <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-mono text-amber-300 font-bold">Native</span>
-                  </button>
-
-                  {/* Phantom */}
-                  <button
-                    onClick={() => {
-                      setWalletMenuOpen(false);
-                      wallet.connectStandard("phantom").catch((e) => handleWalletError(e.message));
-                    }}
-                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs text-neutral-200 hover:bg-white/[0.06] transition"
-                  >
-                    <div className="h-6 w-6 rounded-lg bg-purple-500/20 text-purple-400 font-mono text-xs grid place-items-center font-bold">P</div>
-                    <span className="font-medium">Phantom</span>
-                  </button>
-
-                  {/* Solflare */}
-                  <button
-                    onClick={() => {
-                      setWalletMenuOpen(false);
-                      wallet.connectStandard("solflare").catch((e) => handleWalletError(e.message));
-                    }}
-                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs text-neutral-200 hover:bg-white/[0.06] transition"
-                  >
-                    <div className="h-6 w-6 rounded-lg bg-orange-500/20 text-orange-400 font-mono text-xs grid place-items-center font-bold">S</div>
-                    <span className="font-medium">Solflare</span>
-                  </button>
-
-                  {/* Browser / Injected (Backpack, OKX, etc.) */}
-                  <button
-                    onClick={() => {
-                      setWalletMenuOpen(false);
-                      wallet.connectInjected().catch((e) => handleWalletError(e.message));
-                    }}
-                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs text-neutral-200 hover:bg-white/[0.06] transition"
-                  >
-                    <div className="h-6 w-6 rounded-lg bg-emerald-500/20 text-emerald-400 font-mono text-xs grid place-items-center font-bold">W</div>
-                    <span className="font-medium">Detected SVM Wallet</span>
-                  </button>
+                      <div className="text-left flex-1">
+                        <div className="font-semibold text-white group-hover:text-amber-300 transition">{label}</div>
+                        <div className="text-[10px] text-[#475569]">{sub}</div>
+                      </div>
+                      {badge && (
+                        <span className="text-[9px] font-mono text-amber-300 bg-amber-500/15 border border-amber-500/25 px-1.5 py-0.5 rounded-full">
+                          {badge}
+                        </span>
+                      )}
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
           ) : (
-            <div className="flex items-center gap-2 rounded-xl border border-white/[0.1] bg-[#0f1218] p-1.5 text-xs shadow-md">
-              {/* Balance */}
-              <div className="px-2.5 py-1 font-mono text-neutral-200 font-bold text-xs flex items-center gap-1.5">
-                <span>{wallet.balanceCook.toFixed(4)}</span>
-                <span className="text-amber-400 text-[10px]">COOK</span>
-              </div>
-
-              <div className="h-4 w-px bg-white/[0.1]" />
-
-              {/* Address */}
-              <div className="flex items-center gap-1 pl-1 font-mono text-[11px] text-neutral-300">
-                <span>{wallet.publicKey ? shortenAddress(wallet.publicKey.toBase58(), 4) : ""}</span>
-
-                <button
-                  onClick={handleCopy}
-                  className="rounded p-1 text-neutral-400 hover:bg-white/[0.08] hover:text-white transition"
-                  title="Copy address"
+            <div className="flex items-center gap-1.5 rounded-xl border border-white/[0.1] bg-[#0f1218] px-2.5 py-1.5 text-xs font-mono">
+              <span className="text-[#94a3b8] font-semibold">{wallet.balanceCook.toFixed(3)}</span>
+              <span className="text-amber-400 text-[10px]">COOK</span>
+              <span className="mx-1 h-3 w-px bg-white/[0.1]" />
+              <span className="text-[#94a3b8]">
+                {wallet.publicKey ? shortenAddress(wallet.publicKey.toBase58(), 4) : ""}
+              </span>
+              <button onClick={copyAddr} title="Copy address" className="text-[#475569] hover:text-white ml-0.5">
+                {copied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+              </button>
+              {wallet.publicKey && (
+                <a
+                  href={`${COOKIE_CHAIN_CONFIG.explorerUrl}/address/${wallet.publicKey.toBase58()}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  title="View on explorer"
+                  className="text-[#475569] hover:text-amber-400"
                 >
-                  {copied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
-                </button>
-
-                {wallet.publicKey && (
-                  <a
-                    href={`${COOKIE_CHAIN_CONFIG.explorerUrl}/address/${wallet.publicKey.toBase58()}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded p-1 text-neutral-400 hover:bg-white/[0.08] hover:text-amber-400 transition"
-                    title="View on CookieScan"
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                )}
-
-                <button
-                  onClick={wallet.disconnect}
-                  className="rounded p-1 text-neutral-400 hover:bg-red-500/20 hover:text-red-400 transition ml-1"
-                  title="Disconnect Wallet"
-                >
-                  <Power className="h-3 w-3" />
-                </button>
-              </div>
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              )}
+              <button onClick={wallet.disconnect} title="Disconnect" className="text-[#475569] hover:text-red-400 ml-1">
+                <Power className="h-3 w-3" />
+              </button>
             </div>
           )}
         </div>
       </div>
 
-      {/* Floating Error Toast */}
+      {/* Error Toast */}
       {connectError && (
-        <div className="bg-red-500/10 border-b border-red-500/30 px-4 py-2 text-center text-xs font-mono text-red-300 flex items-center justify-center gap-2 animate-in fade-in">
+        <div className="border-t border-red-500/20 bg-red-500/10 px-4 py-2 text-center text-xs font-mono text-red-300 flex items-center justify-center gap-2 anim-slide-down">
           <span>{connectError}</span>
-          <button
-            onClick={() => setConnectError(null)}
-            className="text-red-400 hover:text-white font-bold ml-2"
-          >
-            ✕
-          </button>
+          <button onClick={() => setConnectError(null)} className="text-red-400 hover:text-white ml-2">✕</button>
         </div>
       )}
     </header>

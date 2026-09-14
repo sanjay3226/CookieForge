@@ -33,15 +33,15 @@ export const DomainResolver: React.FC<DomainResolverProps> = ({ connection }) =>
     <div className="max-w-xl mx-auto rounded-2xl border border-white/[0.08] bg-[#0f1218]/90 p-5 shadow-2xl backdrop-blur-xl">
       <div className="flex items-center justify-between pb-3 border-b border-white/[0.06] mb-4">
         <div>
-          <h3 className="text-xs font-bold uppercase tracking-wider font-mono text-white">
-            .cook Domain Registry (CookOven)
+          <h3 className="text-base font-bold text-white" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
+            Search .cook Names
           </h3>
-          <p className="text-[11px] text-neutral-400 font-mono">
-            Program: {shortenAddress("namesLPneVptA9Z5rqUDD9tMTWEJwofgaYwp8cawRkX", 4)}
+          <p className="text-[11px] text-[#64748b] mt-0.5 font-mono">
+            Look up a name or register your own on Cookie Chain.
           </p>
         </div>
-        <span className="rounded bg-white/[0.04] border border-white/[0.06] px-2 py-0.5 text-[10px] font-mono text-neutral-400">
-          Name Service
+        <span className="rounded bg-white/[0.04] border border-white/[0.06] px-2 py-0.5 text-[10px] font-mono text-[#64748b]">
+          .cook
         </span>
       </div>
 
@@ -65,9 +65,8 @@ export const DomainResolver: React.FC<DomainResolverProps> = ({ connection }) =>
         </button>
       </form>
 
-      {/* Suggested Quick Searches */}
-      <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-[10px] font-mono text-neutral-500">
-        <span>Verified:</span>
+      <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-[10px] font-mono text-[#475569]">
+        <span>Try:</span>
         {["sanjay", "chef", "baker", "degen", "satoshi"].map((name) => (
           <button
             key={name}

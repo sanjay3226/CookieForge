@@ -1,338 +1,318 @@
-import React, { useState } from "react";
-import { 
-  Terminal, 
-  Send, 
-  ExternalLink, 
-  CheckCircle2, 
-  RefreshCw, 
-  ShieldCheck, 
-  Cpu, 
-  Layers, 
+import React, { useState, useCallback } from "react";
+import {
+  Send,
+  ExternalLink,
+  CheckCircle2,
+  RefreshCw,
   Wallet,
-  Sparkles,
-  ArrowUpRight
+  ArrowUpRight,
+  Layers,
+  Info,
 } from "lucide-react";
 import { Transaction, SystemProgram, PublicKey, Connection } from "@solana/web3.js";
 import { createMemoInstruction } from "../utils/memo";
 import { COOKIE_CHAIN_CONFIG, CREATOR_WALLET } from "../utils/constants";
 import { shortenAddress } from "../utils/format";
 import { playSuccessChime } from "../utils/audio";
-import { 
-  COOKIE_VAULT_PROGRAM_ID,
-  getVaultStatePda,
-  getBakerProfilePda,
-  getFortuneRecordPda,
-  createBakeFortuneInstruction
-} from "../services/anchorContract";
 
-interface InscriptionEngineProps {
+interface Props {
   connection: Connection;
   wallet: {
     connected: boolean;
     connecting: boolean;
-    publicKey: any;
+    publicKey: PublicKey | null;
     balanceCook: number;
     connectNightly: () => Promise<void>;
     sendTransaction: (tx: Transaction) => Promise<{ signature: string }>;
   };
 }
 
-export interface InscriptionRecord {
-  id: string;
+interface InscriptionRecord {
   payload: string;
   slot: number;
   timestamp: string;
   signature: string;
-  latencyMs?: number;
-  engineType: "anchor" | "memo";
-  pda?: string;
+  latencyMs: number;
 }
 
-const QUICK_PROMPTS = [
-  "gm Cookie Chain SVM",
-  "Sub-second finality verified",
-  "Superteam Earn Bounty cApp",
+const EXAMPLES = [
+  "gm Cookie Chain 🍪",
+  "Building on-chain with CookieForge",
+  "Superteam Earn Bounty — Hello World",
 ];
 
-export const FortuneBakery: React.FC<InscriptionEngineProps> = ({ wallet, connection }) => {
-  const [engineType, setEngineType] = useState<"anchor" | "memo">("anchor");
+export const FortuneBakery: React.FC<Props> = ({ wallet, connection }) => {
   const [message, setMessage] = useState("");
-  const [isBroadcasting, setIsBroadcasting] = useState(false);
-  const [broadcastError, setBroadcastError] = useState<string | null>(null);
-  const [lastReceipt, setLastReceipt] = useState<InscriptionRecord | null>(null);
-  const [inscriptionsCount, setInscriptionsCount] = useState(0);
+  const [isSending, setIsSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [receipt, setReceipt] = useState<InscriptionRecord | null>(null);
   const [history, setHistory] = useState<InscriptionRecord[]>([]);
 
-  // Active public key
-  const activePubkey = wallet.publicKey || new PublicKey(CREATOR_WALLET);
-  const [bakerProfilePda] = getBakerProfilePda(activePubkey);
-  const [nextFortunePda] = getFortuneRecordPda(activePubkey, inscriptionsCount);
-
-  const handleInscribe = async (e?: React.FormEvent) => {
+  const handleSend = useCallback(async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
 
     if (!wallet.connected) {
-      try {
-        await wallet.connectNightly();
-      } catch (err: any) {
-        setBroadcastError(err?.message || "Please connect your wallet to broadcast on-chain.");
-      }
+      try { await wallet.connectNightly(); }
+      catch (err: any) { setError(err?.message || "Please connect your wallet first."); }
       return;
     }
 
-    const payload = message.trim();
-    if (!payload) {
-      setBroadcastError("Please enter a message to inscribe.");
-      return;
-    }
+    const text = message.trim();
+    if (!text) { setError("Please type a message first."); return; }
+    if (text.length > 128) { setError("Message is too long (max 128 characters)."); return; }
 
-    setIsBroadcasting(true);
-    setBroadcastError(null);
-    const start = Date.now();
+    setIsSending(true);
+    setError(null);
+    const t0 = Date.now();
 
     try {
+      // Always use the on-chain Memo program — guaranteed to work on Cookie Chain
+      // The memo program (MemoSq4...) is a standard Solana-compatible program
       const tx = new Transaction();
 
-      if (engineType === "anchor") {
-        // Real on-chain Anchor instruction into cookie_vault
-        const anchorIx = await createBakeFortuneInstruction(
-          wallet.publicKey,
-          payload,
-          1, // Standard Tier
-          inscriptionsCount
-        );
-        tx.add(anchorIx);
-      } else {
-        // Memo v1 Genesis Program instruction
-        const memoText = `[CookieChain] ${payload}`;
-        tx.add(createMemoInstruction(memoText, wallet.publicKey));
-        // Small self-transfer to register state
-        tx.add(
-          SystemProgram.transfer({
-            fromPubkey: wallet.publicKey,
-            toPubkey: wallet.publicKey,
-            lamports: 10_000,
-          })
-        );
-      }
+      // Tag the memo so it shows up in the explorer with CookieForge branding
+      tx.add(
+        createMemoInstruction(
+          `[CookieForge] ${text}`,
+          wallet.publicKey!
+        )
+      );
 
-      const res = await wallet.sendTransaction(tx);
-      const latency = Date.now() - start;
+      // Attach a self-transfer dust so it registers as a transfer in explorer views
+      tx.add(
+        SystemProgram.transfer({
+          fromPubkey: wallet.publicKey!,
+          toPubkey: wallet.publicKey!,
+          lamports: 1_000, // 0.000001 COOK
+        })
+      );
+
+      const { signature } = await wallet.sendTransaction(tx);
+      const latency = Date.now() - t0;
+
+      // Play success audio
       playSuccessChime();
 
-      let confirmedSlot = 0;
-      try {
-        confirmedSlot = await connection.getSlot("confirmed");
-      } catch {
-        // ignore
-      }
+      // Best-effort slot fetch
+      let slot = 0;
+      try { slot = await connection.getSlot("confirmed"); } catch {}
 
-      const record: InscriptionRecord = {
-        id: res.signature.slice(0, 8),
-        payload,
-        slot: confirmedSlot,
+      const rec: InscriptionRecord = {
+        payload: text,
+        slot,
         timestamp: new Date().toLocaleTimeString(),
-        signature: res.signature,
+        signature,
         latencyMs: latency,
-        engineType,
-        pda: engineType === "anchor" ? nextFortunePda.toBase58() : undefined,
       };
 
-      setLastReceipt(record);
-      setHistory((prev) => [record, ...prev]);
-      setInscriptionsCount((prev) => prev + 1);
+      setReceipt(rec);
+      setHistory((prev) => [rec, ...prev.slice(0, 9)]);
       setMessage("");
     } catch (err: any) {
-      console.error("Inscription broadcast error:", err);
-      setBroadcastError(err?.message || "Transaction failed. Ensure your wallet has COOK for gas.");
+      const msg: string = err?.message || "";
+      // Surface a human-readable error
+      if (msg.includes("rejected") || msg.includes("User rejected") || msg.includes("cancelled")) {
+        setError("You cancelled the transaction.");
+      } else if (msg.includes("insufficient") || msg.includes("0x1")) {
+        setError("Not enough COOK for the fee. Your balance is too low.");
+      } else if (msg.includes("blockhash")) {
+        setError("Network timeout — please try again.");
+      } else {
+        setError(msg || "Transaction failed. Please try again.");
+      }
     } finally {
-      setIsBroadcasting(false);
+      setIsSending(false);
     }
-  };
+  }, [message, wallet, connection]);
 
   return (
-    <div className="max-w-xl mx-auto space-y-6">
-      {/* Central Inscription Card */}
-      <div className="rounded-2xl border border-white/[0.08] bg-[#0c0f16]/95 p-6 shadow-2xl backdrop-blur-xl">
-        {/* Header with Engine Toggle */}
-        <div className="flex items-center justify-between pb-4 border-b border-white/[0.06] mb-4">
-          <div>
-            <h2 className="text-base font-bold font-mono text-white flex items-center gap-2">
-              <Terminal className="h-4 w-4 text-amber-400" />
-              <span>On-Chain Inscription</span>
-            </h2>
-            <p className="text-[11px] text-neutral-400 font-mono mt-0.5">
-              Permanently write state to Cookie Chain SVM
-            </p>
-          </div>
-
-          {/* Engine Selector */}
-          <div className="inline-flex rounded-xl border border-white/[0.08] bg-black/40 p-1">
-            <button
-              type="button"
-              onClick={() => setEngineType("anchor")}
-              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-mono font-medium transition ${
-                engineType === "anchor"
-                  ? "bg-amber-500 text-neutral-950 font-bold shadow-sm"
-                  : "text-neutral-400 hover:text-white"
-              }`}
-            >
-              <Cpu className="h-3 w-3" />
-              <span>Anchor</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setEngineType("memo")}
-              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-mono font-medium transition ${
-                engineType === "memo"
-                  ? "bg-amber-500 text-neutral-950 font-bold shadow-sm"
-                  : "text-neutral-400 hover:text-white"
-              }`}
-            >
-              <Layers className="h-3 w-3" />
-              <span>Memo</span>
-            </button>
-          </div>
+    <div className="space-y-4">
+      {/* Main Write Card */}
+      <div className="card p-6">
+        <div className="pb-4 border-b border-white/[0.07] mb-5">
+          <h2 className="text-xl font-bold text-white"
+              style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
+            Write a Message to the Blockchain
+          </h2>
+          <p className="text-sm text-[#64748b] mt-1">
+            Your message is stored permanently on Cookie Chain. It lives forever — verifiable by anyone.
+          </p>
         </div>
 
-        {/* Input Area */}
-        <form onSubmit={handleInscribe} className="space-y-3">
+        <form onSubmit={handleSend} className="space-y-4">
+          {/* Message textarea */}
           <div>
             <textarea
               value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="What do you want to inscribe permanently on Cookie Chain?"
+              onChange={(e) => { setMessage(e.target.value); setError(null); }}
+              placeholder="Type anything — a note, a declaration, a gm, a URL…"
               rows={3}
               maxLength={128}
-              className="w-full rounded-xl border border-white/[0.08] bg-black/40 p-3.5 text-xs text-white placeholder-neutral-500 focus:border-amber-500/50 focus:outline-none font-mono resize-none"
+              disabled={isSending}
+              className="field resize-none font-sans text-sm leading-relaxed"
             />
-
-            <div className="mt-1 flex items-center justify-between text-[10px] text-neutral-500 font-mono">
-              <div className="flex items-center gap-1.5">
-                <span>Quick:</span>
-                {QUICK_PROMPTS.map((prompt) => (
+            <div className="mt-1.5 flex items-center justify-between text-[10px] font-mono text-[#475569]">
+              {/* Example suggestions */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span>Try:</span>
+                {EXAMPLES.map((ex) => (
                   <button
-                    key={prompt}
+                    key={ex}
                     type="button"
-                    onClick={() => setMessage(prompt)}
-                    className="rounded bg-white/[0.04] px-1.5 py-0.5 text-neutral-400 hover:text-amber-300 hover:bg-white/[0.08] transition"
+                    onClick={() => { setMessage(ex); setError(null); }}
+                    className="rounded bg-white/[0.04] border border-white/[0.06] px-1.5 py-0.5 hover:text-amber-300 hover:border-amber-500/30 transition"
                   >
-                    {prompt}
+                    {ex}
                   </button>
                 ))}
               </div>
-              <span>{message.length}/128</span>
+              <span className={message.length > 110 ? "text-red-400 font-semibold" : ""}>{message.length}/128</span>
             </div>
           </div>
 
-          {/* Minimal Info Bar */}
-          <div className="rounded-xl border border-white/[0.05] bg-black/20 p-2.5 text-[11px] font-mono text-neutral-400 flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <ShieldCheck className="h-3.5 w-3.5 text-amber-400" />
-              <span>
-                {engineType === "anchor" ? "Anchor Program (cookie_vault)" : "Genesis Memo"}
-              </span>
-            </div>
-            <div className="flex items-center gap-3 text-[10px]">
-              <span>Gas: <strong className="text-emerald-400">~0.000005 COOK</strong></span>
-              <span>Finality: <strong className="text-amber-300">&lt;800ms</strong></span>
-            </div>
+          {/* Cost info strip */}
+          <div className="rounded-xl border border-white/[0.05] bg-black/20 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono text-[#475569]">
+            <span className="flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              <span>Network: <strong className="text-[#94a3b8]">Cookie Chain SVM · Mainnet</strong></span>
+            </span>
+            <span>Fee: <strong className="text-emerald-400">~0.000001 COOK</strong></span>
+            <span>Confirms in: <strong className="text-amber-300">&lt;1 second</strong></span>
           </div>
 
-          {/* Error Banner */}
-          {broadcastError && (
-            <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-2.5 text-xs font-mono text-red-300">
-              {broadcastError}
+          {/* How it works note */}
+          <div className="flex items-start gap-2 rounded-xl border border-blue-500/20 bg-blue-500/[0.04] px-3 py-2.5 text-[11px] text-[#60a5fa]">
+            <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+            <span>
+              Uses the <strong>Memo program</strong> — a standard Solana instruction that embeds any UTF-8 text permanently into a transaction on Cookie Chain.
+            </span>
+          </div>
+
+          {/* Error */}
+          {error && (
+            <div className="rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-300 anim-fade-in flex items-start justify-between gap-2">
+              <span>{error}</span>
+              <button type="button" onClick={() => setError(null)} className="text-red-400 hover:text-white shrink-0 text-lg leading-none">×</button>
             </div>
           )}
 
-          {/* Inscribe Button */}
+          {/* CTA Button */}
           <button
             type="submit"
-            disabled={isBroadcasting}
-            className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 active:scale-[0.99] py-3 text-xs font-bold text-neutral-950 transition shadow-lg shadow-amber-500/15 disabled:opacity-50"
+            disabled={isSending || (!wallet.connected && wallet.connecting)}
+            className="btn-primary w-full py-3.5 text-sm"
           >
-            {isBroadcasting ? (
+            {isSending ? (
               <>
                 <RefreshCw className="h-4 w-4 animate-spin" />
-                <span>Broadcasting to Cookie Chain...</span>
+                Sending to Cookie Chain…
               </>
             ) : !wallet.connected ? (
               <>
                 <Wallet className="h-4 w-4" />
-                <span>Connect Wallet to Inscribe</span>
+                Connect Wallet &amp; Publish
               </>
             ) : (
               <>
                 <Send className="h-4 w-4" />
-                <span>Inscribe On-Chain ({engineType === "anchor" ? "Anchor PDA" : "Memo"})</span>
+                Publish Forever On-Chain
               </>
             )}
           </button>
         </form>
 
-        {/* Confirmed Receipt Card */}
-        {lastReceipt && (
-          <div className="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-500/[0.04] p-3.5 text-xs font-mono animate-in fade-in space-y-2">
-            <div className="flex items-center justify-between text-emerald-400 font-bold pb-2 border-b border-emerald-500/20">
-              <div className="flex items-center gap-1.5">
-                <CheckCircle2 className="h-4 w-4" />
-                <span>Inscribed Successfully!</span>
+        {/* Success Receipt */}
+        {receipt && (
+          <div className="mt-5 rounded-xl border border-emerald-500/25 bg-emerald-500/[0.04] p-5 anim-scale-in space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-emerald-400 font-semibold"
+                   style={{ fontFamily: "Georgia, serif" }}>
+                <CheckCircle2 className="h-5 w-5" />
+                <span>Published forever ✓</span>
               </div>
-              <span className="text-[10px] text-neutral-400">Slot #{lastReceipt.slot}</span>
+              <span className="text-[11px] font-mono text-[#475569]">
+                {receipt.latencyMs}ms · block {receipt.slot.toLocaleString()}
+              </span>
             </div>
 
-            <p className="text-neutral-200 text-xs py-1">"{lastReceipt.payload}"</p>
+            <blockquote className="text-[#e2e8f0] text-sm border-l-2 border-emerald-500/40 pl-3 italic"
+                        style={{ fontFamily: "Georgia, serif" }}>
+              "{receipt.payload}"
+            </blockquote>
 
-            <div className="flex items-center justify-between pt-1 border-t border-white/[0.06] text-[11px]">
-              <span className="text-neutral-400">Tx: {shortenAddress(lastReceipt.signature, 6)}</span>
+            <div className="flex items-center justify-between text-[11px] font-mono text-[#475569] pt-1 border-t border-white/[0.05]">
+              <span>{shortenAddress(receipt.signature, 10)}</span>
               <a
-                href={`${COOKIE_CHAIN_CONFIG.explorerUrl}/tx/${lastReceipt.signature}`}
+                href={`${COOKIE_CHAIN_CONFIG.explorerUrl}/tx/${receipt.signature}`}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center gap-1 text-amber-400 hover:underline font-bold"
+                className="flex items-center gap-1 text-amber-400 hover:text-amber-300 font-semibold"
               >
-                <span>View on CookieScan</span>
-                <ExternalLink className="h-3 w-3" />
+                View on Explorer <ExternalLink className="h-3 w-3" />
               </a>
             </div>
           </div>
         )}
       </div>
 
-      {/* Session History Ledger (Only shown if user made inscriptions in this session) */}
+      {/* Session History */}
       {history.length > 0 && (
-        <div className="rounded-2xl border border-white/[0.08] bg-[#0c0f16]/95 p-4 shadow-xl backdrop-blur-xl">
-          <div className="flex items-center justify-between pb-2 border-b border-white/[0.06] mb-3 text-xs font-mono">
-            <span className="text-neutral-400 font-bold uppercase tracking-wider">Session Inscriptions</span>
-            <span className="text-emerald-400 text-[10px]">{history.length} Confirmed</span>
+        <div className="card p-4 anim-fade-up">
+          <div className="flex items-center justify-between pb-2 border-b border-white/[0.06] mb-3">
+            <h3 className="text-sm font-semibold text-white" style={{ fontFamily: "Georgia, serif" }}>
+              Published this session
+            </h3>
+            <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+              {history.length} on-chain
+            </span>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             {history.map((h) => (
-              <div
+              <a
                 key={h.signature}
-                className="flex items-center justify-between rounded-xl border border-white/[0.05] bg-black/40 p-2.5 text-xs font-mono"
+                href={`${COOKIE_CHAIN_CONFIG.explorerUrl}/tx/${h.signature}`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center justify-between rounded-xl border border-white/[0.05] bg-black/20 px-3 py-2 text-xs group hover:border-amber-500/20 hover:bg-amber-500/[0.02] transition"
               >
-                <div className="truncate max-w-[280px]">
-                  <span className="text-neutral-200">"{h.payload}"</span>
-                  <span className="text-[10px] text-neutral-500 ml-2">Slot #{h.slot}</span>
-                </div>
-
-                <a
-                  href={`${COOKIE_CHAIN_CONFIG.explorerUrl}/tx/${h.signature}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-1 text-amber-400 hover:underline text-[11px] shrink-0 ml-2"
-                >
-                  <span>CookieScan</span>
+                <span className="text-[#94a3b8] truncate max-w-[280px] font-sans">"{h.payload}"</span>
+                <div className="flex items-center gap-1 text-[#475569] group-hover:text-amber-400 transition shrink-0 ml-2 font-mono">
+                  <span className="text-[10px]">{shortenAddress(h.signature, 4)}</span>
                   <ArrowUpRight className="h-3 w-3" />
-                </a>
-              </div>
+                </div>
+              </a>
             ))}
           </div>
         </div>
       )}
+
+      {/* About the Memo Program */}
+      <div className="card p-4 anim-fade-up">
+        <div className="flex items-start gap-3">
+          <div className="h-8 w-8 rounded-lg bg-amber-500/10 border border-amber-500/20 grid place-items-center shrink-0">
+            <Layers className="h-4 w-4 text-amber-400" />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-white mb-1" style={{ fontFamily: "Georgia, serif" }}>
+              How does this work?
+            </h3>
+            <p className="text-[12px] text-[#64748b] leading-relaxed">
+              CookieForge writes your message as a <strong className="text-[#94a3b8]">Memo instruction</strong> directly
+              into a Cookie Chain transaction. The Memo program is a built-in standard on all Solana-compatible
+              chains — your text is stored in the transaction forever, readable from any block explorer.
+            </p>
+            <a
+              href={`${COOKIE_CHAIN_CONFIG.explorerUrl}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 mt-2 text-[11px] font-mono text-amber-400 hover:underline"
+            >
+              Browse past inscriptions on CookieScan <ExternalLink className="h-3 w-3" />
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

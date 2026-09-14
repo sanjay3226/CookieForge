@@ -52,11 +52,12 @@ export const MarketRadar: React.FC<MarketRadarProps> = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/[0.06] mb-4">
         <div>
-          <h3 className="text-xs font-bold uppercase tracking-wider font-mono text-white">
-            Cookie Chain Market Radar
+          <h3 className="text-base font-bold text-white"
+              style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
+            Token Prices
           </h3>
-          <p className="text-[11px] text-neutral-400 font-mono mt-0.5">
-            Streaming real-time token metrics via api.cookiescan.io
+          <p className="text-[11px] text-[#64748b] mt-0.5">
+            Live prices from Cookie Chain · updates every 30s
           </p>
         </div>
 

@@ -106,13 +106,14 @@ export const SwapTerminal: React.FC<SwapTerminalProps> = ({ wallet }) => {
           <div>
             <div className="flex items-center gap-2 font-mono text-[11px] text-amber-400 font-semibold mb-0.5">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>COOKIEBOX LIQUIDITY ROUTER</span>
+              <span>COOKIEBOX DEX</span>
             </div>
-            <h3 className="text-base font-bold font-mono text-white">
-              Dynamic AMM & Pool Routing Engine
+            <h3 className="text-base font-bold text-white"
+                style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
+              Swap Tokens
             </h3>
-            <p className="text-[11px] text-neutral-400 font-mono mt-0.5">
-              Live quote aggregation across verified Cookie Chain AMM liquidity pools
+            <p className="text-[11px] text-[#64748b] mt-0.5">
+              Get a live quote and trade on Cookiebox DEX.
             </p>
           </div>
 
@@ -203,25 +204,25 @@ export const SwapTerminal: React.FC<SwapTerminalProps> = ({ wallet }) => {
         {/* Route Details Panel */}
         <div className="rounded-xl border border-white/[0.05] bg-black/20 p-3.5 text-[11px] font-mono space-y-1.5 text-neutral-400 mb-4">
           <div className="flex justify-between items-center">
-            <span>Aggregated Routing Venue</span>
+            <span>Route</span>
             <span className="text-white font-semibold flex items-center gap-1">
               <Zap className="h-3 w-3 text-amber-400" />
-              <span>Cookiebox DAMM v2</span>
+              <span>Cookiebox DEX</span>
             </span>
           </div>
           <div className="flex justify-between">
-            <span>Est. Price Impact</span>
+            <span>Price impact</span>
             <span className="text-emerald-400 font-semibold">
-              {quote ? `< ${quote.priceImpactPct}%` : "< 0.05%"}
+              {quote ? `&lt; ${quote.priceImpactPct}%` : "&lt; 0.05%"}
             </span>
           </div>
           <div className="flex justify-between">
-            <span>Estimated Gas Cost</span>
-            <span className="text-neutral-300 font-semibold">0.000005 COOK (&lt; $0.0001)</span>
+            <span>Fee</span>
+            <span className="text-[#94a3b8] font-semibold">~0.000005 COOK</span>
           </div>
           <div className="flex justify-between">
-            <span>Minimum Received (Slip {slippage}%)</span>
-            <span className="text-neutral-200 font-semibold">
+            <span>Minimum received ({slippage}% slippage)</span>
+            <span className="text-[#e2e8f0] font-semibold">
               {(parseFloat(toAmountCalculated) * (1 - parseFloat(slippage) / 100)).toFixed(4)}{" "}
               {toToken.symbol}
             </span>
@@ -249,19 +250,19 @@ export const SwapTerminal: React.FC<SwapTerminalProps> = ({ wallet }) => {
           </div>
         </div>
 
-        {/* Action Button: Launch on Cookiebox AMM */}
+        {/* Action Button: Launch on Cookiebox */}
         <a
           href={cookieboxSwapUrl}
           target="_blank"
           rel="noreferrer"
-          className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 active:scale-[0.99] py-3.5 text-xs font-bold text-neutral-950 transition shadow-xl shadow-amber-500/15"
+          className="btn-primary w-full py-3.5 text-xs"
         >
-          <span>Execute Trade on Cookiebox AMM</span>
+          <span>Swap on Cookiebox DEX</span>
           <ExternalLink className="h-3.5 w-3.5" />
         </a>
 
-        {/* Verified AMM Program Spec */}
-        <div className="mt-4 pt-3 border-t border-white/[0.06] flex items-center justify-between text-[11px] font-mono text-neutral-500">
+        {/* Program ref */}
+        <div className="mt-4 pt-3 border-t border-white/[0.06] flex items-center justify-between text-[11px] font-mono text-[#475569]">
           <span>Verified DEX Program:</span>
           <div className="flex items-center gap-1.5 text-neutral-400">
             <span>{shortenAddress(COOKIE_PROGRAMS.cookieboxDammV2, 6)}</span>
