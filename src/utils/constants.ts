@@ -38,6 +38,9 @@ export const COOKIE_PROGRAMS = {
   // Hyperlane Bridge Mailbox
   bridgeMailbox: "DhiHgUY8Y6mJ4D3MoRnZWAjTBEtSaFFn4CYgc6eDzZ8r",
   bridgeWarpCookie: "Aa9wq46NB7qkg1amnBuMRsV1DunmkPHuoRLWZgWiBKdn",
+
+  // CookieForge Custom Anchor Program
+  cookieVault: "CookVau1t1111111111111111111111111111111111",
 } as const;
 
 export const KNOWN_MINTS = {

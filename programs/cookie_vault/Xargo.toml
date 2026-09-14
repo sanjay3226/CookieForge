@@ -1,0 +1,5 @@
+[target.bpfel-unknown-unknown.dependencies.custom-panic]
+stage = 4
+
+[target.bpfel-unknown-unknown.dependencies.custom-allocator]
+stage = 4

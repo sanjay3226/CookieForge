@@ -68,11 +68,35 @@ With sub-second transaction finality, negligible gas fees (~$0.000005 per transa
 | **Wrapped COOK Mint** | `So11111111111111111111111111111111111111112` |
 | **Solana COOK Mint** | `36ZrtQoab5MhhySaP1YSTwUahSk6GRVUTtZ6cuVfm9e1` (Token-2022) |
 | **Memo Program** | `MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr` |
+| **Custom Anchor Program** | `CookVau1t1111111111111111111111111111111111` (`cookie_vault`) |
 | **Name Service (.cook)** | `namesLPneVptA9Z5rqUDD9tMTWEJwofgaYwp8cawRkX` |
 | **Cookiebox DBC** | `DBCg4ugDEztk6MbqHEJvx5a5YGJTj45Jb5NvtQ48Rvsf` |
 | **Cookiebox DAMM v2** | `DAMMjDCEFTDkt7ywazZS8GoaLtjb3HaJo3pLbf64xrPY` |
 | **Hyperlane Mailbox** | `DhiHgUY8Y6mJ4D3MoRnZWAjTBEtSaFFn4CYgc6eDzZ8r` |
 | **Explorer** | [cookiescan.io](https://cookiescan.io) |
+
+---
+
+## 🦀 On-Chain Anchor Smart Contract (`programs/cookie_vault`)
+
+CookieForge features a custom on-chain **Anchor program** written in Rust for the Cookie Chain SVM runtime.
+
+### 🏛️ Program Architecture & PDAs
+- **`VaultState` (PDA `["vault_state"]`)**: Global on-chain registry tracking total fortunes minted, cumulative tips donated to public goods, and total registered bakers.
+- **`BakerProfile` (PDA `["baker_profile", user_wallet]`)**: Non-custodial user profile tracking cumulative reputation XP, tier ranks (Novice -> Apprentice -> Pastry Chef -> Master Artisan -> Grand Degen), and on-chain activity.
+- **`FortuneRecord` (PDA `["fortune_record", user_wallet, sequence_index]`)**: Immutable on-chain record storing the UTF-8 payload, cryptographic SHA-256 integrity hash, rarity tier, and execution slot.
+
+### 📜 Program Instructions
+1. `initialize_vault`: Initializes the global `VaultState` singleton.
+2. `register_baker`: Mints a `BakerProfile` PDA and awards 50 onboarding XP.
+3. `bake_fortune`: Inscribes an on-chain fortune, mints a `FortuneRecord` PDA, computes SHA-256 hash, and awards dynamic XP.
+4. `tip_vault`: CPI transfer of native COOK lamports into the community vault PDA with reputation XP rewards.
+
+### 🧪 Run Contract Test Suite
+```bash
+npm test
+```
+Executes the native test suite verifying PDA derivations, seed validity, XP thresholds, and string constraints.
 
 ---
 

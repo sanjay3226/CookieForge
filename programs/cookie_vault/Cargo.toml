@@ -1,0 +1,21 @@
+[package]
+name = "cookie_vault"
+version = "0.1.0"
+description = "CookieForge On-Chain State, Fortune Inscriptions & Baker Reputation Protocol for Cookie Chain SVM"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "cookie_vault"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+
+[dependencies]
+anchor-lang = "0.30.1"
+anchor-spl = "0.30.1"
+solana-program = "~1.18.26"

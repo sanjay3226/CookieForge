@@ -1,0 +1,252 @@
+{
+  "address": "CookVau1t1111111111111111111111111111111111",
+  "metadata": {
+    "name": "cookie_vault",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "CookieForge On-Chain State, Fortune Inscriptions & Baker Reputation Protocol on Cookie Chain SVM"
+  },
+  "instructions": [
+    {
+      "name": "initialize_vault",
+      "discriminator": [48, 191, 163, 44, 71, 129, 63, 164],
+      "accounts": [
+        {
+          "name": "vault_state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [118, 97, 117, 108, 116, 95, 115, 116, 97, 116, 101]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "register_baker",
+      "discriminator": [204, 18, 142, 60, 203, 112, 177, 241],
+      "accounts": [
+        {
+          "name": "vault_state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [118, 97, 117, 108, 116, 95, 115, 116, 97, 116, 101]
+              }
+            ]
+          }
+        },
+        {
+          "name": "baker_profile",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [98, 97, 107, 101, 114, 95, 112, 114, 111, 102, 105, 108, 101]
+              },
+              {
+                "kind": "account",
+                "path": "baker"
+              }
+            ]
+          }
+        },
+        {
+          "name": "baker",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "bake_fortune",
+      "discriminator": [15, 87, 192, 184, 142, 227, 221, 126],
+      "accounts": [
+        {
+          "name": "vault_state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [118, 97, 117, 108, 116, 95, 115, 116, 97, 116, 101]
+              }
+            ]
+          }
+        },
+        {
+          "name": "baker_profile",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [98, 97, 107, 101, 114, 95, 112, 114, 111, 102, 105, 108, 101]
+              },
+              {
+                "kind": "account",
+                "path": "baker"
+              }
+            ]
+          }
+        },
+        {
+          "name": "fortune_record",
+          "writable": true
+        },
+        {
+          "name": "baker",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "owner"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "content",
+          "type": "string"
+        },
+        {
+          "name": "rarity_tier",
+          "type": "u8"
+        },
+        {
+          "name": "fortune_hash",
+          "type": {
+            "array": ["u8", 32]
+          }
+        }
+      ]
+    },
+    {
+      "name": "tip_vault",
+      "discriminator": [112, 206, 149, 111, 230, 241, 114, 18],
+      "accounts": [
+        {
+          "name": "vault_state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [118, 97, 117, 108, 116, 95, 115, 116, 97, 116, 101]
+              }
+            ]
+          }
+        },
+        {
+          "name": "baker_profile",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [98, 97, 107, 101, 114, 95, 112, 114, 111, 102, 105, 108, 101]
+              },
+              {
+                "kind": "account",
+                "path": "baker"
+              }
+            ]
+          }
+        },
+        {
+          "name": "baker",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "owner"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "lamports",
+          "type": "u64"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "VaultState",
+      "discriminator": [211, 8, 232, 43, 2, 152, 117, 119]
+    },
+    {
+      "name": "BakerProfile",
+      "discriminator": [24, 76, 169, 13, 219, 118, 172, 88]
+    },
+    {
+      "name": "FortuneRecord",
+      "discriminator": [134, 144, 12, 183, 201, 78, 16, 119]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "MessageTooLong",
+      "msg": "Fortune message content exceeds maximum allowable length of 128 bytes."
+    },
+    {
+      "code": 6001,
+      "name": "EmptyMessage",
+      "msg": "Fortune message payload cannot be empty."
+    },
+    {
+      "code": 6002,
+      "name": "InvalidRarity",
+      "msg": "Specified rarity tier index is invalid (must be between 0 and 4)."
+    },
+    {
+      "code": 6003,
+      "name": "ZeroTipAmount",
+      "msg": "Contribution to the community vault must be greater than zero."
+    },
+    {
+      "code": 6004,
+      "name": "Unauthorized",
+      "msg": "Signer is not authorized to execute this administrative action."
+    },
+    {
+      "code": 6005,
+      "name": "ProfileNotRegistered",
+      "msg": "Baker profile is not yet registered on Cookie Chain."
+    },
+    {
+      "code": 6006,
+      "name": "MathOverflow",
+      "msg": "Numerical overflow occurred during XP or balance calculation."
+    }
+  ]
+}
