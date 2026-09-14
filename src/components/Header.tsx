@@ -26,6 +26,7 @@ interface HeaderProps {
     balanceCook: number;
     connectNightly: () => Promise<void>;
     connectStandard: (type: "phantom" | "solflare") => Promise<void>;
+    connectInjected: () => Promise<void>;
     disconnect: () => Promise<void>;
   };
   onOpenNetworkGuide: () => void;
@@ -39,6 +40,12 @@ export const Header: React.FC<HeaderProps> = ({
   const [copied, setCopied] = useState(false);
   const [copiedCreator, setCopiedCreator] = useState(false);
   const [walletMenuOpen, setWalletMenuOpen] = useState(false);
+  const [connectError, setConnectError] = useState<string | null>(null);
+
+  const handleWalletError = (msg: string) => {
+    setConnectError(msg);
+    setTimeout(() => setConnectError(null), 5000);
+  };
 
   const handleCopy = () => {
     if (wallet.publicKey) {
@@ -160,7 +167,7 @@ export const Header: React.FC<HeaderProps> = ({
                   <button
                     onClick={() => {
                       setWalletMenuOpen(false);
-                      wallet.connectNightly().catch((e) => alert(e.message));
+                      wallet.connectNightly().catch((e) => handleWalletError(e.message));
                     }}
                     className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-xs text-neutral-200 hover:bg-white/[0.06] transition"
                   >
@@ -178,7 +185,7 @@ export const Header: React.FC<HeaderProps> = ({
                   <button
                     onClick={() => {
                       setWalletMenuOpen(false);
-                      wallet.connectStandard("phantom").catch((e) => alert(e.message));
+                      wallet.connectStandard("phantom").catch((e) => handleWalletError(e.message));
                     }}
                     className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs text-neutral-200 hover:bg-white/[0.06] transition"
                   >
@@ -190,12 +197,24 @@ export const Header: React.FC<HeaderProps> = ({
                   <button
                     onClick={() => {
                       setWalletMenuOpen(false);
-                      wallet.connectStandard("solflare").catch((e) => alert(e.message));
+                      wallet.connectStandard("solflare").catch((e) => handleWalletError(e.message));
                     }}
                     className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs text-neutral-200 hover:bg-white/[0.06] transition"
                   >
                     <div className="h-6 w-6 rounded-lg bg-orange-500/20 text-orange-400 font-mono text-xs grid place-items-center font-bold">S</div>
                     <span className="font-medium">Solflare</span>
+                  </button>
+
+                  {/* Browser / Injected (Backpack, OKX, etc.) */}
+                  <button
+                    onClick={() => {
+                      setWalletMenuOpen(false);
+                      wallet.connectInjected().catch((e) => handleWalletError(e.message));
+                    }}
+                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs text-neutral-200 hover:bg-white/[0.06] transition"
+                  >
+                    <div className="h-6 w-6 rounded-lg bg-emerald-500/20 text-emerald-400 font-mono text-xs grid place-items-center font-bold">W</div>
+                    <span className="font-medium">Detected SVM Wallet</span>
                   </button>
                 </div>
               )}
@@ -246,6 +265,19 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </div>
       </div>
+
+      {/* Floating Error Toast */}
+      {connectError && (
+        <div className="bg-red-500/10 border-b border-red-500/30 px-4 py-2 text-center text-xs font-mono text-red-300 flex items-center justify-center gap-2 animate-in fade-in">
+          <span>{connectError}</span>
+          <button
+            onClick={() => setConnectError(null)}
+            className="text-red-400 hover:text-white font-bold ml-2"
+          >
+            ✕
+          </button>
+        </div>
+      )}
     </header>
   );
 };
